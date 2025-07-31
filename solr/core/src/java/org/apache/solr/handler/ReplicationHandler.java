@@ -106,6 +106,7 @@ import org.apache.solr.util.NumberUtils;
 import org.apache.solr.util.PropertiesInputStream;
 import org.apache.solr.util.RefCounted;
 import org.apache.solr.util.plugin.SolrCoreAware;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -239,6 +240,8 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
 
   @Override
   public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
+    log.info("ReplicationHandler.handleRequestBody: {}", req.getParams());
+    log.info("Pilot is {}", PilotUtil.isDryRun());
     rsp.setHttpCaching(false);
     final SolrParams solrParams = req.getParams();
     String command = solrParams.required().get(COMMAND);
@@ -447,10 +450,13 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
       return IndexFetchResult.CONTAINER_IS_SHUTTING_DOWN; 
     }
     try {
+      log.info("Fetching index from leader: {}, forceReplication={}", leaderUrl, forceReplication);
       if (leaderUrl != null) {
         if (currentIndexFetcher != null && currentIndexFetcher != pollingIndexFetcher) {
+          log.info("Destroying previous IndexFetcher: {}", currentIndexFetcher);
           currentIndexFetcher.destroy();
         }
+        log.info("Creating new IndexFetcher for leader: {}", leaderUrl);
         currentIndexFetcher = new IndexFetcher(solrParams.toNamedList(), this, core);
       } else {
         currentIndexFetcher = pollingIndexFetcher;

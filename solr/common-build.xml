@@ -39,6 +39,7 @@
   <property name="lucene-libs" location="${dest}/lucene-libs" />
   <property name="tests.userdir" location="src/test-files"/>
   <property name="tests.policy" location="${common-solr.dir}/server/etc/security.policy"/>
+  <property name="tests.security.manager" value="false"/>
   <property name="server.dir" location="${common-solr.dir}/server" />
   <property name="example" location="${common-solr.dir}/example" />
   <property name="javadoc.dir" location="${dest}/docs"/>

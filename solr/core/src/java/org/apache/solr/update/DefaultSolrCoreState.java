@@ -29,6 +29,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.context.Context;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.search.Sort;
@@ -43,6 +45,7 @@ import org.apache.solr.core.SolrCore;
 import org.apache.solr.index.SortingMergePolicy;
 import org.apache.solr.logging.MDCLoggingContext;
 import org.apache.solr.util.RefCounted;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,10 +131,12 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
       synchronized (this) {
         if (core == null) {
           // core == null is a signal to just return the current writer, or null if none.
+          log.info("Returning current IndexWriter without incrementing ref count.");
           initRefCntWriter();
           if (refCntWriter == null) return null;
         } else {
           if (indexWriter == null) {
+            log.info("IndexWriter is null, creating a new one for core: {}", core.getName());
             indexWriter = createMainIndexWriter(core, "DirectUpdateHandler2");
           }
           initRefCntWriter();
@@ -205,14 +210,14 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
     if (iw != null) {
       if (!rollback) {
         try {
-          log.debug("Closing old IndexWriter... core= {}", coreName);
+          log.info("Closing old IndexWriter... core= {}", coreName);
           iw.close();
         } catch (Exception e) {
           SolrException.log(log, "Error closing old IndexWriter. core=" + coreName, e);
         }
       } else {
         try {
-          log.debug("Rollback old IndexWriter... core={}", coreName);
+          log.info("Rollback old IndexWriter... core={}", coreName);
           iw.rollback();
         } catch (Exception e) {
           SolrException.log(log, "Error rolling back old IndexWriter. core=" + coreName, e);
@@ -222,7 +227,7 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
 
     if (openNewWriter) {
       indexWriter = createMainIndexWriter(core, "DirectUpdateHandler2");
-      log.info("New IndexWriter is ready to be used.");
+      log.info("New IndexWriter is ready to be used." + PilotUtil.isDryRun());
     }
   }
 
@@ -290,6 +295,12 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
 
   @Override
   public void doRecovery(CoreContainer cc, CoreDescriptor cd) {
+    //print stack trace with log by creating a exception and stack trace
+    for(StackTraceElement element : Thread.currentThread().getStackTrace()) {
+      log.info("Stack trace element: {}", element);
+    }
+
+
     
     Runnable recoveryTask = new Runnable() {
       @Override
@@ -332,14 +343,15 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
                 log.warn("Skipping recovery because Solr is shutdown");
                 return;
               }
-              log.info("Running recovery");
+              log.info("Running recovery, pilot is "+ PilotUtil.isDryRun());
               
               recoveryThrottle.minimumWaitBetweenActions();
               recoveryThrottle.markAttemptingAction();
               
               recoveryStrat = recoveryStrategyBuilder.create(cc, cd, DefaultSolrCoreState.this);
               recoveryStrat.setRecoveringAfterStartup(recoveringAfterStartup);
-              Future<?> future = cc.getUpdateShardHandler().getRecoveryExecutor().submit(recoveryStrat);
+
+              Future<?> future = cc.getUpdateShardHandler().getRecoveryExecutor().submit(Context.current().wrap(recoveryStrat));
               try {
                 future.get();
               } catch (InterruptedException e) {
@@ -366,6 +378,21 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
       // in another thread on another 'recovery' executor.
       //
       // avoid deadlock: we can't use the recovery executor here!
+      Baggage dryRunBaggage = Baggage.current().toBuilder().put("is_dry_run", "true").build();
+      dryRunBaggage.makeCurrent();
+      //Create a new Context with DryRunBaggage
+      Context pilotContext = Context.current().with(dryRunBaggage);
+      log.info("Submitting recovery task for core: {} with dry run baggage", cd.getName());
+      Future future=cc.getUpdateShardHandler().getUpdateExecutor().submit(pilotContext.wrap(recoveryTask));
+      try{
+        future.get();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+      } catch (ExecutionException e) {
+        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+      }
+      log.info("Recovery task submitted for core: {}", cd.getName());
       cc.getUpdateShardHandler().getUpdateExecutor().submit(recoveryTask);
     } catch (RejectedExecutionException e) {
       // fine, we are shutting down

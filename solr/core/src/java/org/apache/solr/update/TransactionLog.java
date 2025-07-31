@@ -44,6 +44,7 @@ import org.apache.solr.common.util.FastInputStream;
 import org.apache.solr.common.util.FastOutputStream;
 import org.apache.solr.common.util.JavaBinCodec;
 import org.apache.solr.common.util.ObjectReleaseTracker;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -478,6 +479,9 @@ public class TransactionLog implements Closeable {
 
 
   public long writeCommit(CommitUpdateCommand cmd) {
+    if(PilotUtil.isDryRun()){
+      return -1;
+    }
     LogCodec codec = new LogCodec(resolver);
     synchronized (this) {
       try {

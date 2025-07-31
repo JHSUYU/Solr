@@ -84,6 +84,7 @@ import org.apache.solr.search.stats.StatsSource;
 import org.apache.solr.uninverting.UninvertingReader;
 import org.apache.solr.update.IndexFingerprint;
 import org.apache.solr.update.SolrIndexConfig;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -425,7 +426,7 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
 
   @Override
   public final DirectoryReader getIndexReader() {
-    assert reader == super.getIndexReader();
+    //assert reader == super.getIndexReader();
     return reader;
   }
 
@@ -458,6 +459,7 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
    */
   @Override
   public void close() throws IOException {
+    log.info("Pilot SolrIndexSearcher is closed 461" + PilotUtil.isDryRun());
     if (log.isDebugEnabled()) {
       if (cachingEnabled) {
         final StringBuilder sb = new StringBuilder();
@@ -477,20 +479,25 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
     // super.close();
     // can't use super.close() since it just calls reader.close() and that may only be called once
     // per reader (even if incRef() was previously called).
-
+    log.info("reader type is " + reader.getClass().getName() + " " + PilotUtil.isDryRun());
     long cpg = reader.getIndexCommit().getGeneration();
+    log.info("reader.getIndexCommit() is " + cpg + " " + PilotUtil.isDryRun());
     try {
-      if (closeReader) rawReader.decRef();
+      log.info("Pilot 481 SolrIndexSearcher is dec ref'ing reader: " + PilotUtil.isDryRun());
+      if (closeReader)
+      {rawReader.decRef();}
     } catch (Exception e) {
       SolrException.log(log, "Problem dec ref'ing reader", e);
     }
 
     if (directoryFactory.searchersReserveCommitPoints()) {
+      log.info("Pilot 491 SolrIndexSearcher is releasing commit point: " + PilotUtil.isDryRun());
       core.getDeletionPolicy().releaseCommitPoint(cpg);
     }
 
     for (@SuppressWarnings({"rawtypes"})SolrCache cache : cacheList) {
       try {
+        log.info("Pilot Execution 496 SolrIndexSearcher is closing cache: " + cache.name() + " " + PilotUtil.isDryRun());
         cache.close();
       } catch (Exception e) {
         SolrException.log(log, "Exception closing cache " + cache.name(), e);

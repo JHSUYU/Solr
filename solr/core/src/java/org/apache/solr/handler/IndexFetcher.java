@@ -106,6 +106,7 @@ import org.apache.solr.util.PropertiesOutputStream;
 import org.apache.solr.util.RTimer;
 import org.apache.solr.util.RefCounted;
 import org.apache.solr.util.TestInjection;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -394,6 +395,7 @@ public class IndexFetcher {
    * @throws IOException if an exception occurs
    */
   IndexFetchResult fetchLatestIndex(boolean forceReplication, boolean forceCoreReload) throws IOException, InterruptedException {
+    log.info("fetchLatestIndex called with forceReplication: {}, forceCoreReload: {}", forceReplication, forceCoreReload);
 
     this.clearLocalIndexFirst = false;
     boolean cleanupDone = false;
@@ -439,7 +441,7 @@ public class IndexFetcher {
           log.info("Updated leaderUrl to {}", leaderUrl);
           // TODO: Do we need to set forceReplication = true?
         } else {
-          log.debug("leaderUrl didn't change");
+          log.info("leaderUrl didn't change");
         }
       }
       //get the current 'replicateable' index version in the leader
@@ -469,6 +471,7 @@ public class IndexFetcher {
       if (commit == null) {
         // Presumably the IndexWriter hasn't been opened yet, and hence the deletion policy hasn't been updated with commit points
         RefCounted<SolrIndexSearcher> searcherRefCounted = null;
+        log.info("Pilot IndexFetcher: No open searcher found, trying to get the newest searcher");
         try {
           searcherRefCounted = solrCore.getNewestSearcher(false);
           if (searcherRefCounted == null) {
@@ -559,6 +562,7 @@ public class IndexFetcher {
 
       // cindex dir...
       indexDirPath = solrCore.getIndexDir();
+      log.info("Pilot direcotryFactory type is: {}", solrCore.getDirectoryFactory().getClass().getName());
       indexDir = solrCore.getDirectoryFactory().get(indexDirPath, DirContext.DEFAULT, solrCore.getSolrConfig().indexConfig.lockType);
 
       try {
@@ -566,16 +570,20 @@ public class IndexFetcher {
         // We will compare all the index files from the leader vs the index files on disk to see if there is a mismatch
         // in the metadata. If there is a mismatch for the same index file then we download the entire index
         // (except when differential copy is applicable) again.
+        log.info("Comparing index files on disk with the leader's index files to see if a full copy is needed");
         if (!isFullCopyNeeded && isIndexStale(indexDir)) {
+          log.info("Index is stale, so we will do a full copy");
           isFullCopyNeeded = true;
         }
 
         if (!isFullCopyNeeded && !fetchFromLeader) {
+          log.info("Not fetching index from leader because the local index is not stale and fetchFromLeader is false");
           // a searcher might be using some flushed but not committed segments
           // because of soft commits (which open a searcher on IW's data)
           // so we need to close the existing searcher on the last commit
           // and wait until we are able to clean up all unused lucene files
           if (solrCore.getCoreContainer().isZooKeeperAware()) {
+            log.info("Closing searcher on the last commit to ensure no soft commits are in use");
             solrCore.closeSearcher();
           }
 
@@ -610,6 +618,7 @@ public class IndexFetcher {
         try {
           // we have to be careful and do this after we know isFullCopyNeeded won't be flipped
           if (!isFullCopyNeeded) {
+            log.info("Index is not stale, so we will not close the index writer");
             solrCore.getUpdateHandler().getSolrCoreState().closeIndexWriter(solrCore, true);
           }
 
@@ -629,6 +638,7 @@ public class IndexFetcher {
 
           Collection<Map<String,Object>> modifiedConfFiles = getModifiedConfFiles(confFilesToDownload);
           if (!modifiedConfFiles.isEmpty()) {
+            log.info("640");
             reloadCore = true;
             downloadConfFiles(confFilesToDownload, latestGeneration);
             if (isFullCopyNeeded) {
@@ -661,8 +671,10 @@ public class IndexFetcher {
             }
           } else {
             terminateAndWaitFsyncService();
+            log.info("No configuration files are modified, so we will not reload the core");
             if (isFullCopyNeeded) {
               successfulInstall = solrCore.modifyIndexProps(tmpIdxDirName);
+              log.info("Index properties modified: {}", successfulInstall);
               if (successfulInstall) deleteTmpIdxDir = false;
             } else {
               successfulInstall = moveIndexFiles(tmpIndexDir, indexDir);
@@ -689,6 +701,7 @@ public class IndexFetcher {
          if (log.isInfoEnabled()) {
            log.info("Reloading SolrCore {}", solrCore.getName());
          }
+         log.info("Pilot IndexFetcher: Reloading SolrCore {}", solrCore.getName());
           reloadCore();
         }
 
@@ -733,6 +746,7 @@ public class IndexFetcher {
       }
     } finally {
       if (!cleanupDone) {
+        log.info("Cleaning up after index fetch");
         cleanup(solrCore, tmpIndexDir, indexDir, deleteTmpIdxDir, tmpTlogDir, successfulInstall);
       }
     }
@@ -1078,6 +1092,7 @@ public class IndexFetcher {
       log.info("tmpIndexDir_type  : {} , {}", tmpIndexDir.getClass(), FilterDirectory.unwrap(tmpIndexDir));
     }
     long usableSpace = usableDiskSpaceProvider.apply(tmpIndexDirPath);
+    log.info("Usable space in tmpIndexDir: {} bytes", usableSpace);
     if (getApproxTotalSpaceReqd(totalSpaceRequired) > usableSpace) {
       deleteFilesInAdvance(indexDir, indexDirPath, totalSpaceRequired, usableSpace);
     }
@@ -1087,10 +1102,12 @@ public class IndexFetcher {
       long size = (Long) file.get(SIZE);
       CompareResult compareResult = compareFile(indexDir, filename, size, (Long) file.get(CHECKSUM));
       boolean alwaysDownload = filesToAlwaysDownloadIfNoChecksums(filename, size, compareResult);
+      log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
       if (log.isDebugEnabled()) {
         log.debug("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
       }
       if (!compareResult.equal || downloadCompleteIndex || alwaysDownload) {
+        log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
         File localFile = new File(indexDirPath, filename);
         if (downloadCompleteIndex && doDifferentialCopy && compareResult.equal && compareResult.checkSummed
             && localFile.exists()) {
@@ -1103,6 +1120,7 @@ public class IndexFetcher {
           Files.createLink(new File(tmpIndexDirPath, filename).toPath(), localFile.toPath());
           bytesSkippedCopying += localFile.length();
         } else {
+          log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
           dirFileFetcher = new DirectoryFileFetcher(tmpIndexDir, file,
               (String) file.get(NAME), FILE, latestGeneration);
           currentFile = file;
@@ -1728,6 +1746,8 @@ public class IndexFetcher {
           final FastInputStream is = getStream();
           int result;
           try {
+            log.info("Fetching file: {} (size: {}, saveAs: {}, output: {}, indexGen: {})",
+                fileName, size, saveAs, solrParamOutput, indexGen);
             //fetch packets one by one in a single request
             result = fetchPackets(is);
             if (result == 0 || result == NO_CONTENT) {
@@ -1743,6 +1763,7 @@ public class IndexFetcher {
         cleanup();
         //if cleanup succeeds . The file is downloaded fully. do an fsync
         fsyncService.submit(() -> {
+          log.info("Fsyncing file: {}", PilotUtil.isDryRun());
           try {
             file.sync();
           } catch (IOException e) {

@@ -414,7 +414,7 @@ public class ZkController implements Closeable {
                     if (executorService != null) {
                       executorService.submit(new RegisterCoreAsync(descriptor, true, true));
                     } else {
-                      register(descriptor.getName(), descriptor, true, true, false);
+                      register(descriptor.getName(), descriptor, true, true, true);
                     }
                   } catch (Exception e) {
                     SolrException.log(log, "Error registering SolrCore", e);
@@ -1574,6 +1574,7 @@ public class ZkController implements Closeable {
         if (log.isInfoEnabled()) {
           log.info("Core needs to recover:{}", core.getName());
         }
+        log.info("Triggered here 1");
         core.getUpdateHandler().getSolrCoreState().doRecovery(cc, core.getCoreDescriptor());
         return true;
       }
@@ -1583,6 +1584,7 @@ public class ZkController implements Closeable {
         if (log.isInfoEnabled()) {
           log.info("Leader's term larger than core {}; starting recovery process", core.getName());
         }
+        log.info("Triggered here 2");
         core.getUpdateHandler().getSolrCoreState().doRecovery(cc, core.getCoreDescriptor());
         return true;
       }

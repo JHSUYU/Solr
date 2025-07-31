@@ -82,6 +82,7 @@ import org.apache.solr.util.RefCounted;
 import org.apache.solr.util.TestInjection;
 import org.apache.solr.util.TimeOut;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1830,6 +1831,7 @@ public class UpdateLog implements PluginInfoInitialized, SolrMetricProducer {
 
     public void doReplay(TransactionLog translog) {
       try {
+        loglog.info("Replaying log" + PilotUtil.isDryRun());
         loglog.warn("Starting log replay {}  active={} starting pos={} inSortedOrder={}", translog, activeLog, recoveryInfo.positionOfStart, inSortedOrder);
         long lastStatusTime = System.nanoTime();
         if (inSortedOrder) {

@@ -87,6 +87,7 @@ import org.apache.solr.security.PublicKeyHandler;
 import org.apache.solr.util.tracing.GlobalTracer;
 import org.apache.solr.util.StartupLoggingUtils;
 import org.apache.solr.util.configuration.SSLConfigurationsFactory;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -364,7 +365,13 @@ public class SolrDispatchFilter extends BaseSolrFilter {
   
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-    doFilter(request, response, chain, false);
+    Boolean isPilot = false;
+    isPilot = request instanceof HttpServletRequest && Boolean.parseBoolean(((HttpServletRequest) request).getHeader("IsPilot"));
+    // if isPilot, start phantom thread
+    log.info("SolrDispatchFilter.doFilter() isPilot: {}", isPilot);
+    try(io.opentelemetry.context.Scope scope = PilotUtil.getDryRunTraceScope(isPilot)) {
+      doFilter(request, response, chain, false);
+    }
   }
   
   public void doFilter(ServletRequest _request, ServletResponse _response, FilterChain chain, boolean retry) throws IOException, ServletException {

@@ -2093,12 +2093,14 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
     openSearcherLock.lock();
     try {
+      log.info("Opening new searcher for core: {}, realtime: {}", getName(), realtime);
       String newIndexDir = getNewIndexDir();
       String indexDirFile = null;
       String newIndexDirFile = null;
 
       // if it's not a normal near-realtime update, check that paths haven't changed.
       if (!updateHandlerReopens) {
+        log.info("Checking index directory paths for core: {}", getName());
         indexDirFile = getDirectoryFactory().normalize(getIndexDir());
         newIndexDirFile = getDirectoryFactory().normalize(newIndexDir);
       }
@@ -2106,12 +2108,13 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       synchronized (searcherLock) {
         newestSearcher = realtimeSearcher;
         if (newestSearcher != null) {
+          log.info("Reusing existing realtime searcher: {}", newestSearcher.get().getName());
           newestSearcher.incref();      // the matching decref is in the finally block
         }
       }
 
       if (newestSearcher != null && (updateHandlerReopens || indexDirFile.equals(newIndexDirFile))) {
-
+        log.info("Reopening existing searcher: {}", newestSearcher.get().getName());
         DirectoryReader newReader;
         DirectoryReader currentReader = newestSearcher.get().getRawReader();
 
@@ -2121,9 +2124,11 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
         try {
           if (writer != null) {
+            log.info("Reopening existing searcher with writer: {}", newestSearcher.get().getName());
             // if in NRT mode, open from the writer
             newReader = DirectoryReader.openIfChanged(currentReader, writer.get(), true);
           } else {
+            log.info("Reopening existing searcher without writer: {}", newestSearcher.get().getName());
             // verbose("start reopen without writer, reader=", currentReader);
             newReader = DirectoryReader.openIfChanged(currentReader);
             // verbose("reopen result", newReader);
@@ -2137,6 +2142,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         if (newReader == null) { // the underlying index has not changed at all
 
           if (realtime) {
+            log.info("Reusing existing realtime searcher: {}", newestSearcher.get().getName());
             // if this is a request for a realtime searcher, just return the same searcher
             newestSearcher.incref();
             return newestSearcher;
@@ -2144,7 +2150,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           } else if (newestSearcher.get().isCachingEnabled() && newestSearcher.get().getSchema() == getLatestSchema()) {
             // absolutely nothing has changed, can use the same searcher
             // but log a message about it to minimize confusion
-
+            log.info("Reusing existing searcher: {}", newestSearcher.get().getName());
             newestSearcher.incref();
             if (log.isDebugEnabled()) {
               log.debug("SolrIndexSearcher has not changed - not re-opening: {}", newestSearcher.get().getName());
@@ -2152,6 +2158,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
             return newestSearcher;
 
           } // ELSE: open a new searcher against the old reader...
+          log.info("Reopening existing searcher with new schema: {}", newestSearcher.get().getName());
           currentReader.incRef();
           newReader = currentReader;
         }
@@ -2170,12 +2177,14 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           // this is set in the constructor if there is a currently open index writer
           // so that we pick up any uncommitted changes and so we don't go backwards
           // in time on a core reload
+          log.info("Creating new searcher with new reader creator: {}", newIndexDir);
           DirectoryReader newReader = newReaderCreator.call();
           tmp = new SolrIndexSearcher(this, newIndexDir, getLatestSchema(),
               (realtime ? "realtime" : "main"), newReader, true, !realtime, true, directoryFactory);
         } else {
           RefCounted<IndexWriter> writer = getSolrCoreState().getIndexWriter(this);
           DirectoryReader newReader = null;
+          log.info("Creating new searcher with new index writer: {}", newIndexDir);
           try {
             newReader = indexReaderFactory.newReader(writer.get(), this);
           } finally {
@@ -2213,6 +2222,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       return newSearcher;
 
     } catch (Exception e) {
+      log.info("Error opening new searcher", e);
       throw new SolrException(ErrorCode.SERVER_ERROR, "Error opening new searcher", e);
     } finally {
       openSearcherLock.unlock();
@@ -2594,13 +2604,15 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
 
   public void closeSearcher() {
-    log.debug("{}Closing main searcher on request.", logid);
+    log.info("{}Closing main searcher on request.", logid);
     synchronized (searcherLock) {
       if (realtimeSearcher != null) {
+        log.info("{}Closing realtime searcher on request.", logid);
         realtimeSearcher.decref();
         realtimeSearcher = null;
       }
       if (_searcher != null) {
+        log.info("{}Closing main searcher on request.", logid);
         _searcher.decref();   // dec refcount for this._searcher
         _searcher = null; // isClosed() does check this
       }

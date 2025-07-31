@@ -308,7 +308,7 @@ public abstract class CachingDirectoryFactory extends DirectoryFactory {
         log.debug("Closing directory on shutdown: {}", val.path);
         ((ShutdownAwareDirectory) val.directory).closeOnShutdown();
       } else {
-        log.debug("Closing directory: {}", val.path);
+        log.info("Closing directory: {}", val.path);
         val.directory.close();
       }
       assert ObjectReleaseTracker.release(val.directory);
@@ -354,10 +354,12 @@ public abstract class CachingDirectoryFactory extends DirectoryFactory {
       final CacheValue cacheValue = byPathCache.get(fullPath);
       Directory directory = null;
       if (cacheValue != null) {
+        log.info("Reusing cached directory for {}", fullPath);
         directory = cacheValue.directory;
       }
 
       if (directory == null) {
+        log.info("Creating new directory for {}", fullPath);
         directory = create(fullPath, createLockFactory(rawLockType), dirContext);
         assert ObjectReleaseTracker.track(directory);
         boolean success = false;
@@ -365,7 +367,7 @@ public abstract class CachingDirectoryFactory extends DirectoryFactory {
           CacheValue newCacheValue = new CacheValue(fullPath, directory);
           byDirectoryCache.put(directory, newCacheValue);
           byPathCache.put(fullPath, newCacheValue);
-          log.debug("return new directory for {}", fullPath);
+          log.info("return new directory for {}", fullPath);
           success = true;
         } finally {
           if (!success) {

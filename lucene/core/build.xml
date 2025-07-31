@@ -29,7 +29,12 @@
   <property name="moman.commit-hash" value="5c5c2a1e4dea" />
   <property name="moman.url" value="https://bitbucket.org/jpbarrette/moman/get/${moman.commit-hash}.zip" />
 
-  <path id="classpath"/>
+  <path id="classpath">
+    <!-- Solr 的依赖 -->
+    <fileset dir="${common.dir}/../solr/core/lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
   
   <!-- if we run with Java 9+, we refer to the java9 classes directory and insert this before the main classpath (to "emulate" a MR-JAR): -->
   <condition property="-test.classpath.java9.addon" value="${build.dir}/classes/java9" else="${build.dir}/classes/java">

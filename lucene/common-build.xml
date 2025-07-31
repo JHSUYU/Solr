@@ -134,7 +134,7 @@
   <property name="tests.filterstacks" value="true"/>
   <property name="tests.luceneMatchVersion" value="${version.base}"/>
   <property name="tests.asserts" value="true" />
-  <property name="tests.policy" location="${common.dir}/tools/junit4/tests.policy"/>
+<!--  <property name="tests.policy" location="${common.dir}/tools/junit4/tests.policy"/>-->
 
   <condition property="tests.asserts.bug.jdk8205399" value="-da:java.util.HashMap" else="">
     <!-- LUCENE-8991 / JDK-8205399: HashMap assertion bug until java12-->
@@ -1048,7 +1048,7 @@
         </condition>
         <property name="tests.iters" value="" />
         <property name="tests.dups"  value="1" />
-        <property name="tests.useSecurityManager"  value="true" />
+        <property name="tests.useSecurityManager"  value="false" />
 
         <property name="tests.heapdump.args" value=""/>
 

@@ -43,6 +43,7 @@ public abstract class RefCounted<Type> {
   }
 
   public final RefCounted<Type> incref() {
+    System.out.println("incref called on " + this.getClass().getName() + " with refcount: " + refcount.get());
     refcount.incrementAndGet();
     return this;
   }
@@ -52,6 +53,7 @@ public abstract class RefCounted<Type> {
   }
 
   public void decref() {
+    System.out.println("decref called on " + this.getClass().getName() + " with refcount: " + refcount.get());
     if (refcount.decrementAndGet() == 0) {
       close();
     }
