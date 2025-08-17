@@ -35,7 +35,7 @@
     <dependency org="org.pilot" name="pilot-util" rev="1.0" conf="compile->default"/>
 
     <!-- Cloning -->
-    <dependency org="uk.com.robust-it" name="cloning" rev="1.10.3" conf="compile->default"/>
+    <dependency org="uk.robust-it" name="cloning" rev="1.10.3" conf="compile->default"/>
 
     <dependency org="org.apache.zookeeper" name="zookeeper" rev="${/org.apache.zookeeper/zookeeper}" conf="compile"/>
     <dependency org="org.apache.zookeeper" name="zookeeper-jute" rev="${/org.apache.zookeeper/zookeeper-jute}" conf="compile"/>

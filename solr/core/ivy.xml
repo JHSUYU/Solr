@@ -37,7 +37,7 @@
     <dependency org="org.pilot" name="pilot-util" rev="1.0" conf="compile->default"/>
 
     <!-- Cloning -->
-    <dependency org="uk.com.robust-it" name="cloning" rev="1.10.3" conf="compile->default"/>
+    <dependency org="uk.robust-it" name="cloning" rev="1.10.3" conf="compile->default"/>
     <dependency org="io.opentracing" name="opentracing-api" rev="${/io.opentracing/opentracing-api}" conf="compile"/>
     <dependency org="io.opentracing" name="opentracing-noop" rev="${/io.opentracing/opentracing-noop}" conf="compile"/>
     <dependency org="io.opentracing" name="opentracing-util" rev="${/io.opentracing/opentracing-util}" conf="compile"/>
