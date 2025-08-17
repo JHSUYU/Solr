@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import io.opentelemetry.context.Context;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -84,6 +85,7 @@ import org.apache.solr.common.util.ExecutorUtil;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SolrNamedThreadFactory;
 import org.apache.solr.common.util.Utils;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -307,7 +309,7 @@ public class HttpSolrClient extends BaseHttpSolrClient {
     ExecutorService pool = ExecutorUtil.newMDCAwareFixedThreadPool(1, new SolrNamedThreadFactory("httpUriRequest"));
     try {
       MDC.put("HttpSolrClient.url", baseUrl);
-      mrr.future = pool.submit(() -> executeMethod(method, request.getUserPrincipal(), processor, isV2ApiRequest(request)));
+      mrr.future = pool.submit(Context.current().wrap(() -> executeMethod(method, request.getUserPrincipal(), processor, isV2ApiRequest(request))));
  
     } finally {
       pool.shutdown();
@@ -542,6 +544,8 @@ public class HttpSolrClient extends BaseHttpSolrClient {
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected NamedList<Object> executeMethod(HttpRequestBase method, Principal userPrincipal, final ResponseParser processor, final boolean isV2Api) throws SolrServerException {
     method.addHeader("User-Agent", AGENT);
+    method.addHeader("PilotID", PilotUtil.getPilotID()+"");
+    log.info("Header added: User-Agent={}, IsPilot={}", AGENT, PilotUtil.isDryRun());
  
     org.apache.http.client.config.RequestConfig.Builder requestConfigBuilder = HttpClientUtil.createDefaultRequestConfigBuilder();
     if (soTimeout != null) {

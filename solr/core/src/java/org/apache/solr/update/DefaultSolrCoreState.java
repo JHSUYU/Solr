@@ -378,13 +378,36 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
       // in another thread on another 'recovery' executor.
       //
       // avoid deadlock: we can't use the recovery executor here!
+//      Baggage dryRunBaggage = Baggage.current().toBuilder().put("is_dry_run", "true").build();
+//      dryRunBaggage.makeCurrent();
+//      //Create a new Context with DryRunBaggage
+//      Context pilotContext = Context.current().with(dryRunBaggage);
+//      log.info("Submitting recovery task for core: {} with dry run baggage", cd.getName());
+//      //Calculate the time of recovery task
+//      Future future=cc.getUpdateShardHandler().getUpdateExecutor().submit(pilotContext.wrap(recoveryTask));
+//      try{
+//        future.get();
+//      } catch (InterruptedException e) {
+//        Thread.currentThread().interrupt();
+//        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+//      } catch (ExecutionException e) {
+//        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+//      }
+//      log.info("Recovery task submitted for core: {}", cd.getName());
+//      cc.getUpdateShardHandler().getUpdateExecutor().submit(recoveryTask);
+
       Baggage dryRunBaggage = Baggage.current().toBuilder().put("is_dry_run", "true").build();
       dryRunBaggage.makeCurrent();
-      //Create a new Context with DryRunBaggage
+//Create a new Context with DryRunBaggage
       Context pilotContext = Context.current().with(dryRunBaggage);
       log.info("Submitting recovery task for core: {} with dry run baggage", cd.getName());
-      Future future=cc.getUpdateShardHandler().getUpdateExecutor().submit(pilotContext.wrap(recoveryTask));
-      try{
+
+// 记录第一次提交的开始时间
+      long firstSubmitStartTime = System.currentTimeMillis();
+
+//Calculate the time of recovery task
+      Future future = cc.getUpdateShardHandler().getUpdateExecutor().submit(pilotContext.wrap(recoveryTask));
+      try {
         future.get();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
@@ -392,8 +415,35 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
       } catch (ExecutionException e) {
         throw new SolrException(ErrorCode.SERVER_ERROR, e);
       }
-      log.info("Recovery task submitted for core: {}", cd.getName());
-      cc.getUpdateShardHandler().getUpdateExecutor().submit(recoveryTask);
+
+// 记录第一次提交完成的时间
+      long firstSubmitEndTime = System.currentTimeMillis();
+      long firstSubmitDuration = firstSubmitEndTime - firstSubmitStartTime;
+      log.info("First recovery task (dry run) completed for core: {}, duration: {} ms",
+          cd.getName(), firstSubmitDuration);
+
+// 记录第二次提交的开始时间
+      long secondSubmitStartTime = System.currentTimeMillis();
+      log.info("Submitting recovery task for core: {}", cd.getName());
+
+// 第二次提交
+      Future secondFuture = cc.getUpdateShardHandler().getUpdateExecutor().submit(recoveryTask);
+      try {
+        secondFuture.get();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+      } catch (ExecutionException e) {
+        throw new SolrException(ErrorCode.SERVER_ERROR, e);
+      }
+
+// 记录第二次提交完成的时间
+      long secondSubmitEndTime = System.currentTimeMillis();
+      long secondSubmitDuration = secondSubmitEndTime - secondSubmitStartTime;
+      long totalDuration = secondSubmitEndTime - firstSubmitStartTime;
+
+      log.info("Second recovery task completed for core: {}, duration: {} ms, total duration: {} ms",
+          cd.getName(), secondSubmitDuration, totalDuration);
     } catch (RejectedExecutionException e) {
       // fine, we are shutting down
     }

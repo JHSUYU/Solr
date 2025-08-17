@@ -365,11 +365,13 @@ public class SolrDispatchFilter extends BaseSolrFilter {
   
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-    Boolean isPilot = false;
-    isPilot = request instanceof HttpServletRequest && Boolean.parseBoolean(((HttpServletRequest) request).getHeader("IsPilot"));
+    int pilotID=0;
+    if(request instanceof HttpServletRequest){
+      pilotID = Integer.parseInt(((HttpServletRequest) request).getHeader("PilotID"));
+    }
     // if isPilot, start phantom thread
-    log.info("SolrDispatchFilter.doFilter() isPilot: {}", isPilot);
-    try(io.opentelemetry.context.Scope scope = PilotUtil.getDryRunTraceScope(isPilot)) {
+    log.info("SolrDispatchFilter.doFilter() isPilot: {}", pilotID);
+    try(io.opentelemetry.context.Scope scope = PilotUtil.getDryRunTraceScope(pilotID)) {
       doFilter(request, response, chain, false);
     }
   }

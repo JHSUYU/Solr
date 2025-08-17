@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.FilterDirectory;
 import org.apache.lucene.util.LuceneTestCase.Slow;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.embedded.JettySolrRunner;
@@ -36,6 +39,9 @@ import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.cloud.DocCollection;
 import org.apache.solr.common.cloud.Replica;
 import org.apache.solr.common.cloud.Slice;
+import org.apache.solr.core.DirectoryFactory;
+import org.apache.solr.core.SimpleFSDirectoryFactory;
+import org.apache.solr.core.SolrCore;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,6 +55,8 @@ public class RecoveryZkTest extends SolrCloudTestCase {
 
   @BeforeClass
   public static void setupCluster() throws Exception {
+
+
     configureCluster(2)
         .addConfig("conf", configset("cloud-minimal"))
         .configure();
@@ -145,6 +153,68 @@ public class RecoveryZkTest extends SolrCloudTestCase {
     log.info("Shard replica recovery test passed");
     //printClasspath();
 
+  }
+
+
+  public void testDirectoryFactory(String collection) throws Exception {
+    // 获取集合的一个节点
+    DocCollection docCollection = getCollectionState(collection);
+    Replica replica = docCollection.getSlice("shard1").getReplicas().iterator().next();
+
+    // 找到对应的 JettySolrRunner
+    JettySolrRunner jetty = null;
+    for (JettySolrRunner runner : cluster.getJettySolrRunners()) {
+      if (runner.getNodeName().equals(replica.getNodeName())) {
+        jetty = runner;
+        break;
+      }
+    }
+
+    if (jetty == null) {
+      fail("Could not find JettySolrRunner for replica");
+    }
+
+    // 获取 SolrCore
+    try (HttpSolrClient client = new HttpSolrClient.Builder(replica.getCoreUrl())
+        .withHttpClient(cluster.getSolrClient().getHttpClient()).build()) {
+
+      // 通过 CoreContainer 获取 SolrCore
+      String coreName = replica.getCoreName();
+      SolrCore core = jetty.getCoreContainer().getCore(coreName);
+
+      if (core != null) {
+        try {
+          DirectoryFactory df = core.getDirectoryFactory();
+
+          // 打印实际的 DirectoryFactory 类型
+          System.out.println("DirectoryFactory class: " + df.getClass().getName());
+
+          // 注意：在 SolrCloud 模式下，默认可能不是 SimpleFSDirectoryFactory
+          // 可能是 NRTCachingDirectoryFactory 或其他
+          System.out.println("Is SimpleFSDirectoryFactory: " + (df instanceof SimpleFSDirectoryFactory));
+
+          // 获取一个目录实例并验证
+          String dataDir = core.getDataDir();
+          Directory dir = df.get(dataDir, DirectoryFactory.DirContext.DEFAULT,
+              core.getSolrConfig().indexConfig.lockType);
+
+          try {
+            // 打印目录类型
+            Directory baseDir = dir;
+            while (baseDir instanceof FilterDirectory) {
+              baseDir = ((FilterDirectory) baseDir).getDelegate();
+            }
+            System.out.println("Base directory class: " + baseDir.getClass().getName());
+          } finally {
+            df.release(dir);
+          }
+        } finally {
+          core.close();
+        }
+      } else {
+        fail("Could not get core: " + coreName);
+      }
+    }
   }
 
   public void printClasspath() {

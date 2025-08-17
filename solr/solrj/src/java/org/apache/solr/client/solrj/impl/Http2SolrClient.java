@@ -96,6 +96,7 @@ import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.util.BlockingArrayQueue;
 import org.eclipse.jetty.util.Fields;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -488,6 +489,14 @@ public class Http2SolrClient extends SolrClient {
         req.header(entry.getKey(), entry.getValue());
       }
     }
+
+    log.info(
+        "PilotUtil" + PilotUtil.isDryRun()+"Request to {}: {} {}",
+        req.getURI(),
+        solrRequest.getMethod(),
+        solrRequest.getParams() == null ? "" : solrRequest.getParams().toQueryString());
+    req.header("IsPilot", PilotUtil.isDryRun()+"");
+
   }
   
   private String changeV2RequestEndpoint(String basePath) throws MalformedURLException {

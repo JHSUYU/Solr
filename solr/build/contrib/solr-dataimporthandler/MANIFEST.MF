@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.10.15
+Created-By: 1.8.0_202-b08 (Oracle Corporation)
+Extension-Name: org.apache.solr
+Specification-Title: Apache Solr Search Server: solr-dataimporthandler
+Specification-Version: 8.11.4
+Specification-Vendor: The Apache Software Foundation
+Implementation-Title: org.apache.solr
+Implementation-Version: 8.11.4-SNAPSHOT 78bf739cf01d507e33b3267e3facf0
+ 923a537c03 - lizhenyu - 2025-08-16 22:46:57
+Implementation-Vendor: The Apache Software Foundation
+X-Compile-Source-JDK: 8
+X-Compile-Target-JDK: 8
+
