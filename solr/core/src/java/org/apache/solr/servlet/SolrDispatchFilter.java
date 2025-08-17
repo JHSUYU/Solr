@@ -367,7 +367,11 @@ public class SolrDispatchFilter extends BaseSolrFilter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
     int pilotID=0;
     if(request instanceof HttpServletRequest){
-      pilotID = Integer.parseInt(((HttpServletRequest) request).getHeader("PilotID"));
+      try{
+        pilotID = Integer.parseInt(((HttpServletRequest) request).getHeader("PilotID"));
+      }catch(NumberFormatException e){
+        log.warn("PilotID header is not a valid integer, using default value 0", e);
+      }
     }
     // if isPilot, start phantom thread
     log.info("SolrDispatchFilter.doFilter() isPilot: {}", pilotID);

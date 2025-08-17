@@ -6,8 +6,8 @@ Specification-Title: Apache Solr Search Server: solr-analysis-extras
 Specification-Version: 8.11.4
 Specification-Vendor: The Apache Software Foundation
 Implementation-Title: org.apache.solr
-Implementation-Version: 8.11.4-SNAPSHOT 78bf739cf01d507e33b3267e3facf0
- 923a537c03 - lizhenyu - 2025-08-16 22:46:38
+Implementation-Version: 8.11.4-SNAPSHOT c5dd4c438b95d54b4d282705a00df5
+ da261e934b - lizhenyu - 2025-08-17 11:34:49
 Implementation-Vendor: The Apache Software Foundation
 X-Compile-Source-JDK: 8
 X-Compile-Target-JDK: 8
