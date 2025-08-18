@@ -82,6 +82,4 @@
     </lst>
   </requestHandler>
 
-  <!-- Admin Handlers -->
-  <requestHandler name="/admin/" class="solr.admin.AdminHandlers"/>
 </config>

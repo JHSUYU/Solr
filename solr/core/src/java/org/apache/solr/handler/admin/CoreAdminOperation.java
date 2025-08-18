@@ -43,6 +43,7 @@ import org.apache.solr.core.snapshots.SolrSnapshotMetaDataManager.SnapshotMetaDa
 import org.apache.solr.handler.admin.CoreAdminHandler.CoreAdminOp;
 import org.apache.solr.metrics.SolrMetricManager;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.update.SolrCoreState;
 import org.apache.solr.update.UpdateLog;
 import org.apache.solr.util.NumberUtils;
 import org.apache.solr.common.util.PropertiesUtil;
@@ -165,7 +166,10 @@ enum CoreAdminOperation implements CoreAdminOp {
     try (SolrCore core = it.handler.coreContainer.getCore(cname)) {
       if (core != null) {
         // This can take a while, but doRecovery is already async so don't worry about it here
-        core.getUpdateHandler().getSolrCoreState().doRecovery(it.handler.coreContainer, core.getCoreDescriptor());
+        SolrCoreState coreState = core.getUpdateHandler().getSolrCoreState();
+        coreState.triggerdByManualRecovery = true;
+        coreState.doRecovery(it.handler.coreContainer, core.getCoreDescriptor());
+        SolrCoreState.isPilot = true;
       } else {
         throw new SolrException(ErrorCode.BAD_REQUEST, "Unable to locate core " + cname);
       }

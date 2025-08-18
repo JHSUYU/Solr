@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.LockFactory;
 import org.apache.lucene.store.SimpleFSDirectory;
+import org.pilot.PilotUtil;
 
 
 /**
@@ -32,6 +33,19 @@ public class SimpleFSDirectoryFactory extends StandardDirectoryFactory {
   @Override
   protected Directory create(String path, LockFactory lockFactory, DirContext dirContext) throws IOException {
     // we pass NoLockFactory, because the real lock factory is set later by injectLockFactory:
+
+    if (PilotUtil.isDryRun() && path != null && path.startsWith("/opt/SolrData")) {
+      // 替换路径前缀
+      String newPath = path.replace("/opt/SolrData", "/opt/SolrDataPilot");
+
+      // 确保新目录存在
+      File newDir = new File(newPath);
+      if (!newDir.exists()) {
+        newDir.mkdirs();
+      }
+      System.out.println("Using dry run path: " + newPath);
+      path = newPath;
+    }
     return new SimpleFSDirectory(new File(path).toPath(), lockFactory);
   }
 

@@ -47,6 +47,10 @@ import java.util.concurrent.locks.Lock;
 public abstract class SolrCoreState {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+  public boolean triggerdByManualRecovery = false;
+
+  public static boolean isPilot = true;
+
   private static final int PAUSE_UPDATES_TIMEOUT_MILLIS = Integer.getInteger("solr.cloud.wait-for-updates-on-shutdown-millis", 2500);
 
   protected boolean closed = false;

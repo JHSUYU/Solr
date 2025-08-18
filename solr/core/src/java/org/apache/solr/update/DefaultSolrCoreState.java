@@ -295,13 +295,10 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
 
   @Override
   public void doRecovery(CoreContainer cc, CoreDescriptor cd) {
-    //print stack trace with log by creating a exception and stack trace
-    for(StackTraceElement element : Thread.currentThread().getStackTrace()) {
-      log.info("Stack trace element: {}", element);
+    if(!triggerdByManualRecovery){
+      return;
     }
-
-
-    
+    //print stack trace with log by creating a exception and stack trace
     Runnable recoveryTask = new Runnable() {
       @Override
       public void run() {
@@ -426,8 +423,16 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
       long secondSubmitStartTime = System.currentTimeMillis();
       log.info("Submitting recovery task for core: {}", cd.getName());
 
+
+
+      int pilotID=1;
+      Baggage pilotBaggage = Baggage.builder().put("is_dry_run", pilotID+"").build();
+      Context context = Context.current();
+      if(!SolrCoreState.isPilot){
+        context = context.with(pilotBaggage);
+      }
 // 第二次提交
-      Future secondFuture = cc.getUpdateShardHandler().getUpdateExecutor().submit(recoveryTask);
+      Future secondFuture = cc.getUpdateShardHandler().getUpdateExecutor().submit(context.wrap(recoveryTask));
       try {
         secondFuture.get();
       } catch (InterruptedException e) {
