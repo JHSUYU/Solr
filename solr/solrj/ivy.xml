@@ -32,10 +32,10 @@
     <dependency org="io.opentelemetry" name="opentelemetry-context" rev="1.44.1" conf="compile"/>
 
     <!-- Pilot Util -->
-    <dependency org="org.pilot" name="pilot-util" rev="1.0" conf="compile->default"/>
+    <dependency org="org.pilot" name="pilot-util" rev="1.0" conf="compile->default" transitive="true"/>
 
     <!-- Cloning -->
-    <dependency org="uk.robust-it" name="cloning" rev="1.10.3" conf="compile->default"/>
+    <dependency org="uk.robust-it" name="cloning" rev="1.10.3" conf="compile->default" transitive="true"/>
 
     <dependency org="org.apache.zookeeper" name="zookeeper" rev="${/org.apache.zookeeper/zookeeper}" conf="compile"/>
     <dependency org="org.apache.zookeeper" name="zookeeper-jute" rev="${/org.apache.zookeeper/zookeeper-jute}" conf="compile"/>
