@@ -49,7 +49,7 @@ public abstract class SolrCoreState {
 
   public boolean triggerdByManualRecovery = false;
 
-  public static boolean isPilot = true;
+  public static boolean isPilot = false;
 
   private static final int PAUSE_UPDATES_TIMEOUT_MILLIS = Integer.getInteger("solr.cloud.wait-for-updates-on-shutdown-millis", 2500);
 
