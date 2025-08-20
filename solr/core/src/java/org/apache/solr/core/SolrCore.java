@@ -464,6 +464,11 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
   public DirectoryFactory getDirectoryFactory() {
     log.info("Pilot id is "+ PilotUtil.isDryRun());
+    if(PilotUtil.isDryRun()){
+      for(StackTraceElement element : Thread.currentThread().getStackTrace()){
+        log.info("Stack trace element is "+element);
+      }
+    }
     log.info("directoryfactory classname is "+ directoryFactory.getClass().getName());
     return directoryFactory;
   }
