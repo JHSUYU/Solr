@@ -172,6 +172,7 @@ import org.apache.solr.util.plugin.PluginInfoInitialized;
 import org.apache.solr.util.plugin.SolrCoreAware;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
+import org.pilot.PilotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -462,6 +463,8 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
 
   public DirectoryFactory getDirectoryFactory() {
+    log.info("Pilot id is "+ PilotUtil.isDryRun());
+    log.info("directoryfactory classname is "+ directoryFactory.getClass().getName());
     return directoryFactory;
   }
 
