@@ -173,6 +173,7 @@ import org.apache.solr.util.plugin.SolrCoreAware;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.pilot.PilotUtil;
+import org.pilot.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -469,6 +470,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         log.info("Stack trace element is "+element);
       }
     }
+    DirectoryFactory tmp= State.shallowCopy(directoryFactory, null, false);
     log.info("directoryfactory classname is "+ directoryFactory.getClass().getName());
     return directoryFactory;
   }
@@ -2193,6 +2195,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           RefCounted<IndexWriter> writer = getSolrCoreState().getIndexWriter(this);
           DirectoryReader newReader = null;
           log.info("Creating new searcher with new index writer: {}", newIndexDir);
+          log.info("Pilot is "+PilotUtil.isDryRun());
           try {
             newReader = indexReaderFactory.newReader(writer.get(), this);
           } finally {
