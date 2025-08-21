@@ -470,6 +470,23 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         log.info("Stack trace element is "+element);
       }
     }
+    Class<?> stateClass = State.class;
+    log.info("State class: " + stateClass.getName());
+    log.info("State class loader: " + stateClass.getClassLoader());
+
+    // 获取类的加载位置
+    try {
+      java.net.URL location = stateClass.getProtectionDomain().getCodeSource().getLocation();
+      log.info("State class loaded from: " + location);
+    } catch (Exception e) {
+      log.error("Cannot get State class location", e);
+    }
+
+    // 也可以用这种方式获取资源路径
+    String resourcePath = stateClass.getName().replace('.', '/') + ".class";
+    java.net.URL resourceUrl = stateClass.getClassLoader().getResource(resourcePath);
+    log.info("State class resource URL: " + resourceUrl);
+
     DirectoryFactory tmp= State.shallowCopy(directoryFactory, null, false);
     log.info("directoryfactory classname is "+ directoryFactory.getClass().getName());
     return directoryFactory;
