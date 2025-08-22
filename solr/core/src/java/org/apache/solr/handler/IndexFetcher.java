@@ -361,8 +361,11 @@ public class IndexFetcher {
       NamedList response = client.request(req);
 
       List<Map<String, Object>> files = (List<Map<String,Object>>) response.get(CMD_GET_FILE_LIST);
-      if (files != null)
+      log.info("Response from leader for file list: {}", response);
+      if (files != null) {
+        log.info("Number of files to download for index generation {}: {}", gen, files.size());
         filesToDownload = Collections.synchronizedList(files);
+      }
       else {
         filesToDownload = Collections.emptyList();
         log.error("No files to download for index generation: {}", gen);
@@ -738,10 +741,13 @@ public class IndexFetcher {
         log.error("User aborted Replication", e);
         return new IndexFetchResult(IndexFetchResult.FAILED_BY_EXCEPTION_MESSAGE, false, e);
       } catch (SolrException e) {
+        log.error("Solr Exception during index fetch", e);
         throw e;
       } catch (InterruptedException e) {
+        log.warn("Index fetch interrupted", e);
         throw (InterruptedException)(new InterruptedException("Index fetch interrupted").initCause(e));
       } catch (Exception e) {
+      log.error("Exception during index fetch", e);
         throw new SolrException(ErrorCode.SERVER_ERROR, "Index fetch failed : ", e);
       }
     } finally {
