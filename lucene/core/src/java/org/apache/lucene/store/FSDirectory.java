@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.lucene.util.Constants;
 import org.apache.lucene.util.IOUtils;
+import org.pilot.filesystem.ShadowFiles;
 
 /**
  * Base class for Directory implementations that store index
@@ -152,8 +153,11 @@ public abstract class FSDirectory extends BaseDirectory {
   protected FSDirectory(Path path, LockFactory lockFactory) throws IOException {
     super(lockFactory);
     // If only read access is permitted, createDirectories fails even if the directory already exists.
-    if (!Files.isDirectory(path)) {
-      Files.createDirectories(path);  // create directory, if it doesn't exist
+//    if (!Files.isDirectory(path)) {
+//      Files.createDirectories(path);  // create directory, if it doesn't exist
+//    }
+    if(!ShadowFiles.isDirectory(path)){
+      ShadowFiles.createDirectories(path);
     }
     directory = path.toRealPath();
   }
@@ -211,7 +215,7 @@ public abstract class FSDirectory extends BaseDirectory {
   private static String[] listAll(Path dir, Set<String> skipNames) throws IOException {
     List<String> entries = new ArrayList<>();
     
-    try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+    try (DirectoryStream<Path> stream = ShadowFiles.newDirectoryStream(dir)) {
       for (Path path : stream) {
         String name = path.getFileName().toString();
         if (skipNames == null || skipNames.contains(name) == false) {
@@ -239,7 +243,8 @@ public abstract class FSDirectory extends BaseDirectory {
     if (pendingDeletes.contains(name)) {
       throw new NoSuchFileException("file \"" + name + "\" is pending delete");
     }
-    return Files.size(directory.resolve(name));
+    return ShadowFiles.size(directory.resolve(name));
+    //return Files.size(directory.resolve(name));
   }
 
   @Override
@@ -299,7 +304,8 @@ public abstract class FSDirectory extends BaseDirectory {
       privateDeleteFile(dest, true); // try again to delete it - this is best effort
       pendingDeletes.remove(dest); // watch out if the delete fails it's back in here.
     }
-    Files.move(directory.resolve(source), directory.resolve(dest), StandardCopyOption.ATOMIC_MOVE);
+    ShadowFiles.move(directory.resolve(source), directory.resolve(dest), StandardCopyOption.ATOMIC_MOVE);
+    //Files.move(directory.resolve(source), directory.resolve(dest), StandardCopyOption.ATOMIC_MOVE);
   }
 
   @Override
@@ -367,7 +373,8 @@ public abstract class FSDirectory extends BaseDirectory {
 
   private void privateDeleteFile(String name, boolean isPendingDelete) throws IOException {
     try {
-      Files.delete(directory.resolve(name));
+      ShadowFiles.delete(directory.resolve(name));
+      //Files.delete(directory.resolve(name));
       pendingDeletes.remove(name);
     } catch (NoSuchFileException | FileNotFoundException e) {
       // We were asked to delete a non-existent file:
@@ -407,7 +414,7 @@ public abstract class FSDirectory extends BaseDirectory {
     }
 
     FSIndexOutput(String name, OpenOption... options) throws IOException {
-      super("FSIndexOutput(path=\"" + directory.resolve(name) + "\")", name, new FilterOutputStream(Files.newOutputStream(directory.resolve(name), options)) {
+      super("FSIndexOutput(path=\"" + directory.resolve(name) + "\")", name, new FilterOutputStream(ShadowFiles.newOutputStream(directory.resolve(name), options)) {
         // This implementation ensures, that we never write more than CHUNK_SIZE bytes:
         @Override
         public void write(byte[] b, int offset, int length) throws IOException {

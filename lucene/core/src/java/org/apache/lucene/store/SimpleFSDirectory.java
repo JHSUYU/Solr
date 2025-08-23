@@ -27,6 +27,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.Future;
 
+import org.pilot.filesystem.ShadowFileChannel;
+import org.pilot.filesystem.ShadowFiles;
+
 /** A straightforward implementation of {@link FSDirectory}
  *  using {@link Files#newByteChannel(Path, java.nio.file.OpenOption...)}.  
  *  However, this class has
@@ -76,7 +79,7 @@ public class SimpleFSDirectory extends FSDirectory {
     ensureOpen();
     ensureCanRead(name);
     Path path = directory.resolve(name);
-    SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ);
+    SeekableByteChannel channel = ShadowFiles.newByteChannel(path, StandardOpenOption.READ);
     return new SimpleFSIndexInput("SimpleFSIndexInput(path=\"" + path + "\")", channel, context);
   }
 
