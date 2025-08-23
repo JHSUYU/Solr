@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
+import org.pilot.filesystem.ShadowFiles;
+
 /**
  * <p>Implements {@link LockFactory} using {@link
  * Files#createFile}.</p>
@@ -73,13 +75,16 @@ public final class SimpleFSLockFactory extends FSLockFactory {
     
     // Ensure that lockDir exists and is a directory.
     // note: this will fail if lockDir is a symlink
-    Files.createDirectories(lockDir);
+    ShadowFiles.createDirectories(lockDir);
+    //Files.createDirectories(lockDir);
     
     Path lockFile = lockDir.resolve(lockName);
     
     // create the file: this will fail if it already exists
     try {
-      Files.createFile(lockFile);
+      //Files.createFile(lockFile);
+      ShadowFiles.createFile(lockFile);
+
     } catch (FileAlreadyExistsException | AccessDeniedException e) {
       // convert optional specific exception to our optional specific exception
       throw new LockObtainFailedException("Lock held elsewhere: " + lockFile, e);
