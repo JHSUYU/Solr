@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.lucene.util.Constants;
 import org.apache.lucene.util.IOUtils;
 import org.pilot.filesystem.ShadowFiles;
+import org.pilot.filesystem.ShadowPath;
 
 /**
  * Base class for Directory implementations that store index
@@ -150,7 +151,7 @@ public abstract class FSDirectory extends BaseDirectory {
    * ({@link NativeFSLockFactory});
    * @throws IOException if there is a low-level I/O error
    */
-  protected FSDirectory(Path path, LockFactory lockFactory) throws IOException {
+  protected  FSDirectory(Path path, LockFactory lockFactory) throws IOException {
     super(lockFactory);
     // If only read access is permitted, createDirectories fails even if the directory already exists.
 //    if (!Files.isDirectory(path)) {
@@ -159,7 +160,7 @@ public abstract class FSDirectory extends BaseDirectory {
     if(!ShadowFiles.isDirectory(path)){
       ShadowFiles.createDirectories(path);
     }
-    directory = path.toRealPath();
+    directory = new ShadowPath(path).toRealPath();
   }
 
   /** Creates an FSDirectory instance, trying to pick the

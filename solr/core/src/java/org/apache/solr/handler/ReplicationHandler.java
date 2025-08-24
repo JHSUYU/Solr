@@ -686,6 +686,7 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
       
       List<Map<String, Object>> result = new ArrayList<>();
       Directory dir = null;
+      log.info("Getting file list for indexCommit generation1: {}, commit={}", commit.getGeneration(), commit);
       try {
         dir = core.getDirectoryFactory().get(core.getNewIndexDir(), DirContext.DEFAULT, core.getSolrConfig().indexConfig.lockType);
         SegmentInfos infos = SegmentInfos.readCommit(dir, commit.getSegmentsFileName());

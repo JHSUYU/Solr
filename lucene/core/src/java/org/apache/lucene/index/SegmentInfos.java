@@ -303,9 +303,11 @@ public final class SegmentInfos implements Cloneable, Iterable<SegmentCommitInfo
       // NOTE: as long as we want to throw indexformattooold (vs corruptindexexception), we need
       // to read the magic ourselves.
       int magic = input.readInt();
+      System.out.println("read magic=" + Integer.toHexString(magic) + " from " + input);
       if (magic != CodecUtil.CODEC_MAGIC) {
         throw new IndexFormatTooOldException(input, magic, CodecUtil.CODEC_MAGIC, CodecUtil.CODEC_MAGIC);
       }
+      System.out.println("read magic ok from " + input);
       format = CodecUtil.checkHeaderNoMagic(input, "segments", VERSION_70, VERSION_CURRENT);
       byte id[] = new byte[StringHelper.ID_LENGTH];
       input.readBytes(id, 0, id.length);

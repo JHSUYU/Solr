@@ -47,6 +47,9 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FileSwitchDirectory;
 import org.apache.lucene.store.FilterDirectory;
 import org.apache.lucene.store.RAMDirectory;
+import org.pilot.filesystem.ShadowFileChannel;
+import org.pilot.filesystem.ShadowFiles;
+import org.pilot.filesystem.ShadowPath;
 
 /** This class emulates the new Java 7 "Try-With-Resources" statement.
  * Remove once Lucene is on Java 7.
@@ -252,7 +255,7 @@ public final class IOUtils {
     for (Path name : files) {
       if (name != null) {
         try {
-          Files.delete(name);
+          ShadowFiles.delete(name);
         } catch (Throwable ignored) {
           // ignore
         }
@@ -287,7 +290,7 @@ public final class IOUtils {
     for (Path file : files) {
       try {
         if (file != null) {
-          Files.deleteIfExists(file);
+          ShadowFiles.deleteIfExists(file);
         }
       } catch (Throwable t) {
         th = useOrSuppress(th, t);
@@ -324,9 +327,9 @@ public final class IOUtils {
     if (locations != null) {
       for (Path location : locations) {
         // TODO: remove this leniency!
-        if (location != null && Files.exists(location)) {
+        if (location != null && ShadowFiles.exists(location)) {
           try {
-            Files.walkFileTree(location, new FileVisitor<Path>() {            
+            ShadowFiles.walkFileTree(location, new FileVisitor<Path>() {
               @Override
               public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 return FileVisitResult.CONTINUE;
@@ -460,13 +463,13 @@ public final class IOUtils {
     // See http://blog.httrack.com/blog/2013/11/15/everything-you-always-wanted-to-know-about-fsync/
     if (isDir && Constants.WINDOWS) {
       // opening a directory on Windows fails, directories can not be fsynced there
-      if (Files.exists(fileToSync) == false) {
+      if (ShadowFiles.exists(fileToSync) == false) {
         // yet do not suppress trying to fsync directories that do not exist
         throw new NoSuchFileException(fileToSync.toString());
       }
       return;
     }
-    try (final FileChannel file = FileChannel.open(fileToSync, isDir ? StandardOpenOption.READ : StandardOpenOption.WRITE)) {
+    try (final FileChannel file = ShadowFileChannel.open(fileToSync, isDir ? StandardOpenOption.READ : StandardOpenOption.WRITE)) {
       try {
         file.force(true);
       } catch (final IOException e) {
@@ -517,7 +520,7 @@ public final class IOUtils {
    *  @lucene.internal */
   public static boolean spins(Path path) throws IOException {
     // resolve symlinks (this will throw exception if the path does not exist)
-    path = path.toRealPath();
+    path = new ShadowPath(path).toRealPath();
     
     // Super cowboy approach, but seems to work!
     if (!Constants.LINUX) {
