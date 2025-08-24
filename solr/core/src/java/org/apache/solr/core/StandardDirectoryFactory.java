@@ -35,6 +35,7 @@ import org.apache.lucene.store.NoLockFactory;
 import org.apache.lucene.store.SimpleFSLockFactory;
 import org.apache.lucene.store.SingleInstanceLockFactory;
 import org.apache.solr.common.SolrException;
+import org.pilot.filesystem.ShadowFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,11 +138,11 @@ public class StandardDirectoryFactory extends CachingDirectoryFactory {
     if (baseDir instanceof FSDirectory) {
       Path path = ((FSDirectory) baseDir).getDirectory().toAbsolutePath();
       try {
-        Files.move(path.resolve(fileName),
+        ShadowFiles.move(path.resolve(fileName),
             path.resolve(toName), StandardCopyOption.ATOMIC_MOVE,
             StandardCopyOption.REPLACE_EXISTING);
       } catch (AtomicMoveNotSupportedException e) {
-        Files.move(FileSystems.getDefault().getPath(path.toString(), fileName),
+        ShadowFiles.move(FileSystems.getDefault().getPath(path.toString(), fileName),
             FileSystems.getDefault().getPath(path.toString(), toName), StandardCopyOption.REPLACE_EXISTING);
       }
     } else {
