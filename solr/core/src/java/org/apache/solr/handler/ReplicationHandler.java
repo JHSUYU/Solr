@@ -689,6 +689,7 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
       try {
         dir = core.getDirectoryFactory().get(core.getNewIndexDir(), DirContext.DEFAULT, core.getSolrConfig().indexConfig.lockType);
         SegmentInfos infos = SegmentInfos.readCommit(dir, commit.getSegmentsFileName());
+        log.info("Getting file list for indexCommit generation: {}, commit={}", commit.getGeneration(), commit);
         for (SegmentCommitInfo commitInfo : infos) {
           for (String file : commitInfo.files()) {
             Map<String, Object> fileMeta = new HashMap<>();
@@ -708,6 +709,7 @@ public class ReplicationHandler extends RequestHandlerBase implements SolrCoreAw
             result.add(fileMeta);
           }
         }
+        log.info("Adding {} files to list for index generation: {}", result.size(), commit.getGeneration());
         
         // add the segments_N file
         
