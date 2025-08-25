@@ -1339,6 +1339,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
     try {
       dir = directoryFactory.get(dataDir, DirContext.META_DATA, solrConfig.indexConfig.lockType);
       String tmpIdxPropName = IndexFetcher.INDEX_PROPERTIES + "." + System.nanoTime();
+      log.info("Writing new index properties to [{}] in [{}]", tmpIdxPropName, dir);
       writeNewIndexProps(dir, tmpIdxPropName, tmpIdxDirName);
       directoryFactory.renameWithOverwrite(dir, tmpIdxPropName, IndexFetcher.INDEX_PROPERTIES);
       return true;

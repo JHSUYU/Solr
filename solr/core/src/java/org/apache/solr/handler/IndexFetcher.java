@@ -551,6 +551,7 @@ public class IndexFetcher {
       boolean isFullCopyNeeded = IndexDeletionPolicyWrapper
           .getCommitTimestamp(commit) >= latestVersion
           || commit.getGeneration() >= latestGeneration || forceReplication;
+      log.info("Is full copy needed? {}", isFullCopyNeeded);
 
       String timestamp = new SimpleDateFormat(SnapShooter.DATE_FMT, Locale.ROOT).format(new Date());
       String tmpIdxDirName = "index." + timestamp;
@@ -719,6 +720,7 @@ public class IndexFetcher {
             }
           }
           if (isFullCopyNeeded) {
+            //bug happens there!
             solrCore.getUpdateHandler().newIndexWriter(isFullCopyNeeded);
           }
 
@@ -965,6 +967,9 @@ public class IndexFetcher {
   }
 
   private void openNewSearcherAndUpdateCommitPoint() throws IOException {
+    if(PilotUtil.isDryRun()){
+      return;
+    }
     RefCounted<SolrIndexSearcher> searcher = null;
     IndexCommit commitPoint;
     // must get the latest solrCore object because the one we have might be closed because of a reload
@@ -1312,6 +1317,7 @@ public class IndexFetcher {
       String filename = (String) file.get(NAME);
       Long length = (Long) file.get(SIZE);
       Long checksum = (Long) file.get(CHECKSUM);
+      log.info("Checking file {} with length {} and checksum {}", filename, length, checksum);
       if (slowFileExists(dir, filename)) {
         if (checksum != null) {
           if (!(compareFile(dir, filename, length, checksum).equal)) {
