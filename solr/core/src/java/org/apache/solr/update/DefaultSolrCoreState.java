@@ -143,6 +143,7 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
         }
 
         refCntWriter.incref();
+        log.info("Returning IndexWriter with ref count of {}", refCntWriter.get());
         succeeded = true;  // the returned RefCounted<IndexWriter> will release the readLock on a decref()
         return refCntWriter;
       }
@@ -161,6 +162,7 @@ public final class DefaultSolrCoreState extends SolrCoreState implements Recover
     // need this class any more.  It could also be a singleton created at the same time as SolrCoreState
     // or we could change the API of SolrCoreState to just return the writer and then add a releaseWriter() call.
     if (refCntWriter == null && indexWriter != null) {
+      log.info("Creating new RefCounted<IndexWriter> wrapper");
       refCntWriter = new RefCounted<IndexWriter>(indexWriter) {
 
         @Override
