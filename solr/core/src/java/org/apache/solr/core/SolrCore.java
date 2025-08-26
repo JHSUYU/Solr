@@ -403,8 +403,9 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
     try {
       dir = getDirectoryFactory().get(getDataDir(), DirContext.META_DATA, getSolrConfig().indexConfig.lockType);
       String result = getIndexPropertyFromPropFile(dir);
+      log.info("result is "+result);
       if (!result.equals(lastNewIndexDir)) {
-        log.debug("New index directory detected: old={} new={}", lastNewIndexDir, result);
+        log.info("New index directory detected: old={} new={}", lastNewIndexDir, result);
       }
       lastNewIndexDir = result;
       return result;
@@ -2123,6 +2124,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
     try {
       log.info("Opening new searcher for core: {}, realtime: {}", getName(), realtime);
       String newIndexDir = getNewIndexDir();
+      log.info("New index directory: {}", newIndexDir);
       String indexDirFile = null;
       String newIndexDirFile = null;
 
@@ -2310,6 +2312,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         // see if we can return the current searcher
         if (_searcher != null && !forceNew) {
           if (returnSearcher) {
+            log.info("Reusing existing registered searcher: {}", _searcher.get().getName());
             _searcher.incref();
             return _searcher;
           } else {
@@ -2362,6 +2365,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           log.warn("{}PERFORMANCE WARNING: Overlapping onDeckSearchers={}", logid, onDeckSearchers);
         }
 
+        log.info("Break Opening new searcher: onDeckSearchers={}", onDeckSearchers);
         break; // I can now exit the loop and proceed to open a searcher
       }
     }

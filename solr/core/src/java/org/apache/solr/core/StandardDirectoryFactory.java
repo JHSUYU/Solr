@@ -122,9 +122,9 @@ public class StandardDirectoryFactory extends CachingDirectoryFactory {
       Path path2 = ((FSDirectory) baseToDir).getDirectory().toAbsolutePath();
       
       try {
-        Files.move(path1.resolve(fileName), path2.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
+        ShadowFiles.move(path1.resolve(fileName), path2.resolve(fileName), StandardCopyOption.ATOMIC_MOVE);
       } catch (AtomicMoveNotSupportedException e) {
-        Files.move(path1.resolve(fileName), path2.resolve(fileName));
+        ShadowFiles.move(path1.resolve(fileName), path2.resolve(fileName));
       }
       return;
     }

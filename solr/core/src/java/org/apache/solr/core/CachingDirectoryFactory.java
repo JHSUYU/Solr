@@ -142,7 +142,7 @@ public abstract class CachingDirectoryFactory extends DirectoryFactory {
             + " " + byDirectoryCache);
       }
       cacheValue.doneWithDir = true;
-      log.debug("Done with dir: {}", cacheValue);
+      log.info("Done with dir: {}", cacheValue);
       if (cacheValue.refCnt == 0 && !closed) {
         boolean cl = closeCacheValue(cacheValue);
         if (cl) {
