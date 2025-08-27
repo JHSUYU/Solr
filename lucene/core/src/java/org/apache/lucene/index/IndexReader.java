@@ -146,6 +146,9 @@ public abstract class IndexReader implements Closeable {
   }
 
   private void reportCloseToParentReaders() throws IOException {
+    for(StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+      System.out.println("report CloseToParentReaders: "+ste);
+    }
     synchronized (parentReaders) {
       for (IndexReader parent : parentReaders) {
         parent.closedByChild = true;
