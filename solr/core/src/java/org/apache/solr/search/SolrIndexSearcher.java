@@ -254,15 +254,17 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
     this.schema = schema;
     this.name = "Searcher@" + Integer.toHexString(hashCode()) + "[" + core.getName() + "]"
         + (name != null ? " " + name : "");
-    log.debug("Opening [{}]", this.name);
+    log.info("Opening [{}]", this.name);
 
     if (directoryFactory.searchersReserveCommitPoints()) {
       // reserve commit point for life of searcher
+      log.info("Reserving commit point for searcher {}", this.name);
       // TODO: This may not be safe w/softCommit, see SOLR-13908
       core.getDeletionPolicy().saveCommitPoint(reader.getIndexCommit().getGeneration());
     }
 
     if (reserveDirectory) {
+      log.info("SolrIndexSearcher is reserving directory: {} {}", getIndexReader().directory(), PilotUtil.isDryRun());
       // Keep the directory from being released while we use it.
       directoryFactory.incRef(getIndexReader().directory());
       // Make sure to release it when closing.

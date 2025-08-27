@@ -114,7 +114,7 @@ public final class SimpleFSLockFactory extends FSLockFactory {
       // try to validate the backing file name, that it still exists,
       // and has the same creation time as when we obtained the lock. 
       // if it differs, someone deleted our lock file (and we are ineffective)
-      FileTime ctime = Files.readAttributes(path, BasicFileAttributes.class).creationTime(); 
+      FileTime ctime = Files.readAttributes(path, BasicFileAttributes.class).creationTime();
       if (!creationTime.equals(ctime)) {
         throw new AlreadyClosedException("Underlying file changed by an external force at " + ctime + ", (lock=" + this + ")");
       }
@@ -138,7 +138,7 @@ public final class SimpleFSLockFactory extends FSLockFactory {
         // we did a best effort check, now try to remove the file. if something goes wrong,
         // we need to make it clear to the user that the directory may still remain locked.
         try {
-          Files.delete(path);
+          ShadowFiles.delete(path);
         } catch (Throwable exc) {
           throw new LockReleaseFailedException("Unable to remove lock file. Manual intervention is recommended", exc);
         }

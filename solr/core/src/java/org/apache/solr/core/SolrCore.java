@@ -2144,7 +2144,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       }
 
       if (newestSearcher != null && (updateHandlerReopens || indexDirFile.equals(newIndexDirFile))) {
-        log.info("Reopening existing searcher: {}", newestSearcher.get().getName());
+        log.info("Reopening existing searcher1: {}", newestSearcher.get().getName());
         DirectoryReader newReader;
         DirectoryReader currentReader = newestSearcher.get().getRawReader();
 
@@ -2154,11 +2154,11 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
 
         try {
           if (writer != null) {
-            log.info("Reopening existing searcher with writer: {}", newestSearcher.get().getName());
+            log.info("Reopening existing searcher with writer2: {}", newestSearcher.get().getName());
             // if in NRT mode, open from the writer
             newReader = DirectoryReader.openIfChanged(currentReader, writer.get(), true);
           } else {
-            log.info("Reopening existing searcher without writer: {}", newestSearcher.get().getName());
+            log.info("Reopening existing searcher without writer3: {}", newestSearcher.get().getName());
             // verbose("start reopen without writer, reader=", currentReader);
             newReader = DirectoryReader.openIfChanged(currentReader);
             // verbose("reopen result", newReader);
@@ -2172,7 +2172,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         if (newReader == null) { // the underlying index has not changed at all
 
           if (realtime) {
-            log.info("Reusing existing realtime searcher: {}", newestSearcher.get().getName());
+            log.info("Reusing existing realtime searcher4: {}", newestSearcher.get().getName());
             // if this is a request for a realtime searcher, just return the same searcher
             newestSearcher.incref();
             return newestSearcher;
@@ -2180,7 +2180,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           } else if (newestSearcher.get().isCachingEnabled() && newestSearcher.get().getSchema() == getLatestSchema()) {
             // absolutely nothing has changed, can use the same searcher
             // but log a message about it to minimize confusion
-            log.info("Reusing existing searcher: {}", newestSearcher.get().getName());
+            log.info("Reusing existing searcher5: {}", newestSearcher.get().getName());
             newestSearcher.incref();
             if (log.isDebugEnabled()) {
               log.debug("SolrIndexSearcher has not changed - not re-opening: {}", newestSearcher.get().getName());
@@ -2188,7 +2188,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
             return newestSearcher;
 
           } // ELSE: open a new searcher against the old reader...
-          log.info("Reopening existing searcher with new schema: {}", newestSearcher.get().getName());
+          log.info("Reopening existing searcher with new schema6: {}", newestSearcher.get().getName());
           currentReader.incRef();
           newReader = currentReader;
         }

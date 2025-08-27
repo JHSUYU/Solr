@@ -372,12 +372,15 @@ public class IndexFetcher {
       }
 
       files = (List<Map<String,Object>>) response.get(CONF_FILES);
-      if (files != null)
+      if (files != null) {
         confFilesToDownload = Collections.synchronizedList(files);
+        log.info("Number of config files to download: {}", confFilesToDownload.size());
+      }
 
       files = (List<Map<String, Object>>) response.get(TLOG_FILES);
       if (files != null) {
         tlogFilesToDownload = Collections.synchronizedList(files);
+        log.info("Number of tlog files to download: {}", tlogFilesToDownload.size());
       }
     } catch (SolrServerException e) {
       throw new IOException(e);
@@ -685,6 +688,7 @@ public class IndexFetcher {
             }
             if (tlogFilesToDownload != null) {
               // move tlog files and refresh ulog only if we successfully installed a new index
+              log.info("Moving tlog files to {}", solrCore.getUpdateHandler().getUpdateLog().getLogDir());
               successfulInstall &= moveTlogFiles(tmpTlogDir);
             }
             if (successfulInstall) {
@@ -696,6 +700,7 @@ public class IndexFetcher {
           solrCore.searchEnabled = true;
           solrCore.indexEnabled = true;
           if (!isFullCopyNeeded) {
+            log.info("Re-opening IndexWriter after replication");
             solrCore.getUpdateHandler().getSolrCoreState().openIndexWriter(solrCore);
           }
         }
