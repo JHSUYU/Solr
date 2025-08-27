@@ -78,7 +78,6 @@ import org.slf4j.Logger;
  (non-Lucene) objects instead.
 */
 public abstract class IndexReader implements Closeable {
-  private static final Logger log = org.slf4j.LoggerFactory.getLogger(IndexReader.class);
   
   private boolean closed = false;
   private boolean closedByChild = false;
@@ -148,8 +147,9 @@ public abstract class IndexReader implements Closeable {
   }
 
   private void reportCloseToParentReaders() throws IOException {
+    System.out.println("report CloseToParentReaders at: " + new java.util.Date() + " (" + System.currentTimeMillis() + ")");
     for(StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-      log.info("report CloseToParentReaders: "+ste);
+      System.out.println("report CloseToParentReaders: "+ste);
     }
     synchronized (parentReaders) {
       for (IndexReader parent : parentReaders) {
@@ -242,6 +242,7 @@ public abstract class IndexReader implements Closeable {
     }
     
     final int rc = refCount.decrementAndGet();
+    System.out.println(new java.util.Date() + " - " + this.getClass().getName() + "@" + Integer.toHexString(this.hashCode()) + " refCount=" + rc);
     if (rc == 0) {
       closed = true;
       try (Closeable finalizer = this::reportCloseToParentReaders;
