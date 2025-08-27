@@ -29,6 +29,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.util.Bits;  // javadocs
+import org.slf4j.Logger;
 
 /**
  IndexReader is an abstract class, providing an interface for accessing a
@@ -77,6 +78,7 @@ import org.apache.lucene.util.Bits;  // javadocs
  (non-Lucene) objects instead.
 */
 public abstract class IndexReader implements Closeable {
+  private static final Logger log = org.slf4j.LoggerFactory.getLogger(IndexReader.class);
   
   private boolean closed = false;
   private boolean closedByChild = false;
@@ -147,7 +149,7 @@ public abstract class IndexReader implements Closeable {
 
   private void reportCloseToParentReaders() throws IOException {
     for(StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-      System.out.println("report CloseToParentReaders: "+ste);
+      log.info("report CloseToParentReaders: "+ste);
     }
     synchronized (parentReaders) {
       for (IndexReader parent : parentReaders) {
