@@ -2385,6 +2385,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       // the searchHolder will be incremented once already (and it will eventually be assigned to _searcher when registered)
       // increment it again if we are going to return it to the caller.
       if (returnSearcher) {
+        log.info("Incrementing searcher ref for return to caller: {}", searchHolder.get().getName());
         searchHolder.incref();
       }
 
@@ -2521,6 +2522,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       timerContext.close();
 
       if (!success) {
+        log.info("Failed to open new searcher", (Throwable) null);
         newSearcherOtherErrorsCounter.inc();
         ;
         synchronized (searcherLock) {
@@ -2536,12 +2538,15 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         }
 
         if (currSearcherHolder != null) {
+          log.info("Decreffing current searcher after failed new searcher open: {}", currSearcherHolder.get().getName());
           currSearcherHolder.decref();
         }
 
         if (searchHolder != null) {
+          log.info("Decreffing new searcher after failed open: {}", searchHolder.get().getName());
           searchHolder.decref();      // decrement 1 for _searcher (searchHolder will never become _searcher now)
           if (returnSearcher) {
+            log.info("Decreffing new searcher after failed open for return to caller: {}", searchHolder.get().getName());
             searchHolder.decref();    // decrement 1 because we won't be returning the searcher to the user
           }
         }

@@ -1000,10 +1000,13 @@ public class IndexFetcher {
       }
       commitPoint = searcher.get().getIndexReader().getIndexCommit();
     } finally {
+      log.info("Releasing searcher and closing core");
       if (searcher != null) {
         searcher.decref();
       }
+      log.info("Core closed");
       core.close();
+      log.info("Core closed completed");
     }
 
     // update the commit point in replication handler
