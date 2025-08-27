@@ -773,7 +773,7 @@ public class RecoveryStrategy implements Runnable, Closeable {
 
     // if replay was skipped (possibly to due pulling a full index from the leader),
     // then we still need to update version bucket seeds after recovery
-    if (successfulRecovery && replayFuture == null && !PilotUtil.isDryRun()) {
+    if (successfulRecovery && replayFuture == null) {
       log.info("Updating version bucket highest from index after successful recovery.");
       core.seedVersionBuckets();
     }

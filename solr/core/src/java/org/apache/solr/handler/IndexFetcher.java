@@ -972,9 +972,9 @@ public class IndexFetcher {
   }
 
   private void openNewSearcherAndUpdateCommitPoint() throws IOException {
-    if(PilotUtil.isDryRun()){
-      return;
-    }
+//    if(PilotUtil.isDryRun()){
+//      return;
+//    }
     RefCounted<SolrIndexSearcher> searcher = null;
     IndexCommit commitPoint;
     // must get the latest solrCore object because the one we have might be closed because of a reload
