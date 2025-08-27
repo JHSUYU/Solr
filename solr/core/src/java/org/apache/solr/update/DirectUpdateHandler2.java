@@ -588,7 +588,7 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
     boolean error=true;
 
     try {
-      log.debug("start {}", cmd);
+      log.info("start {}", cmd);
       RefCounted<IndexWriter> iw = solrCoreState.getIndexWriter(core);
       try {
         SolrIndexWriter.setCommitData(iw.get(), cmd.getVersion());
@@ -597,7 +597,7 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
         iw.decref();
       }
 
-      log.debug("end_prepareCommit");
+      log.info("end_prepareCommit");
 
       error=false;
     }
@@ -614,13 +614,16 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
   public void commit(CommitUpdateCommand cmd) throws IOException {
     TestInjection.injectDirectUpdateLatch();
     if (cmd.prepareCommit) {
+      log.info("prepareCommit");
       prepareCommit(cmd);
       return;
     }
 
     if (cmd.optimize) {
+      log.info("start1 {}", cmd);
       optimizeCommands.mark();
     } else {
+      log.info("start2 {}", cmd);
       commitCommands.mark();
       if (cmd.expungeDeletes) expungeDeleteCommands.mark();
     }
@@ -634,21 +637,24 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
     try {
       // only allow one hard commit to proceed at once
       if (!cmd.softCommit) {
+        log.info("acquiring commit lock");
         solrCoreState.getCommitLock().lock();
       }
 
-      log.debug("start {}", cmd);
+      log.info("start3 {}", cmd);
 
       // We must cancel pending commits *before* we actually execute the commit.
 
       if (cmd.openSearcher) {
         // we can cancel any pending soft commits if this commit will open a new searcher
+        log.info("canceling pending soft commits");
         softCommitTracker.cancelPendingCommit();
       }
       if (!cmd.softCommit && (cmd.openSearcher || !commitTracker.getOpenSearcher())) {
         // cancel a pending hard commit if this commit is of equal or greater "strength"...
         // If the autoCommit has openSearcher=true, then this commit must have openSearcher=true
         // to cancel.
+        log.info("canceling pending hard commits");
          commitTracker.cancelPendingCommit();
       }
 
@@ -656,12 +662,15 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
       try {
         IndexWriter writer = iw.get();
         if (cmd.optimize) {
+          log.info("optimizing to {} segments", cmd.maxOptimizeSegments);
           writer.forceMerge(cmd.maxOptimizeSegments);
         } else if (cmd.expungeDeletes) {
+          log.info("expunging deletes");
           writer.forceMergeDeletes();
         }
         
         if (!cmd.softCommit) {
+          log.info("committing673");
           synchronized (solrCoreState.getUpdateLock()) { // sync is currently needed to prevent preCommit
                                 // from being called between preSoft and
                                 // postSoft... see postSoft comments.
@@ -671,6 +680,7 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
           // SolrCore.verbose("writer.commit() start writer=",writer);
 
           if (writer.hasUncommittedChanges()) {
+            log.debug("Committing IndexWriter");
             SolrIndexWriter.setCommitData(writer, cmd.getVersion());
             writer.commit();
           } else {
@@ -695,12 +705,14 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
         // ulog.preSoftCommit();
         synchronized (solrCoreState.getUpdateLock()) {
           if (ulog != null) ulog.preSoftCommit(cmd);
+          log.info("soft committing");
           core.getSearcher(true, false, waitSearcher, true);
           if (ulog != null) ulog.postSoftCommit(cmd);
         }
         callPostSoftCommitCallbacks();
       } else {
         synchronized (solrCoreState.getUpdateLock()) {
+          log.info("hard committing");
           if (ulog != null) ulog.preSoftCommit(cmd);
           if (cmd.openSearcher) {
             core.getSearcher(true, false, waitSearcher);
@@ -723,7 +735,7 @@ public class DirectUpdateHandler2 extends UpdateHandler implements SolrCoreState
         commitTracker.didCommit();
       }
       
-      log.debug("end_commit_flush");
+      log.info("end_commit_flush");
 
       error=false;
     }

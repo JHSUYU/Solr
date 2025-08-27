@@ -2351,6 +2351,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           log.error("{}ERROR!!! onDeckSearchers is {}", logid, onDeckSearchers);
           onDeckSearchers = 1;  // reset
         } else if (onDeckSearchers > maxWarmingSearchers) {
+          log.info("{}Waiting to open searcher: onDeckSearchers={} maxWarmingSearchers={}", logid, onDeckSearchers, maxWarmingSearchers);
           onDeckSearchers--;
           newSearcherMaxReachedCounter.inc();
           try {
@@ -2379,6 +2380,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
     openSearcherLock.lock();
     Timer.Context timerContext = newSearcherTimer.time();
     try {
+      log.info("Opening new searcher for core: {}", getName());
       searchHolder = openNewSearcher(updateHandlerReopens, false);
       // the searchHolder will be incremented once already (and it will eventually be assigned to _searcher when registered)
       // increment it again if we are going to return it to the caller.
@@ -2394,6 +2396,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       boolean alreadyRegistered = false;
       synchronized (searcherLock) {
         if (_searcher == null) {
+          log.info("Registering new searcher immediately: {}", newSearcher.getName());
           // if there isn't a current searcher then we may
           // want to register this one before warming is complete instead of waiting.
           if (solrConfig.useColdSearcher) {
@@ -2420,6 +2423,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         // warm the new searcher based on the current searcher.
         // should this go before the other event handlers or after?
         if (currSearcher != null) {
+          log.info("Autowarming new searcher: {} from current searcher: {}", newSearcher.getName(), currSearcher.getName());
           future = searcherExecutor.submit(() -> {
             Timer.Context warmupContext = newSearcherWarmupTimer.time();
             try {
@@ -2437,6 +2441,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         }
 
         if (currSearcher == null) {
+          log.info("Firing firstSearcher event for new searcher: {}", newSearcher.getName());
           future = searcherExecutor.submit(() -> {
             try {
               for (SolrEventListener listener : firstSearcherListeners) {
@@ -2453,6 +2458,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
         }
 
         if (currSearcher != null) {
+          log.info("Firing newSearcher event for new searcher: {} old searcher: {}", newSearcher.getName(), currSearcher.getName());
           future = searcherExecutor.submit(() -> {
             try {
               for (SolrEventListener listener : newSearcherListeners) {
@@ -2475,6 +2481,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       // queued will finish first).
       final RefCounted<SolrIndexSearcher> currSearcherHolderF = currSearcherHolder;
       if (!alreadyRegistered) {
+        log.info("Scheduling registration of new searcher: {}", newSearcher.getName());
         future = searcherExecutor.submit(
             () -> {
               try {

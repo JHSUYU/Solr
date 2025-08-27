@@ -107,6 +107,7 @@ import org.apache.solr.util.RTimer;
 import org.apache.solr.util.RefCounted;
 import org.apache.solr.util.TestInjection;
 import org.pilot.PilotUtil;
+import org.pilot.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -990,6 +991,12 @@ public class IndexFetcher {
         } catch (InterruptedException | ExecutionException e) {
           SolrException.log(log, e);
         }
+      }
+      try{State.deepCopy(searcher.get().getIndexReader());}
+      catch (Exception e){
+        log.info("searcher.get().getIndexReaderType is "+searcher.get().getIndexReader().getClass().getName());
+        log.info("e is "+e);
+        SolrException.log(log,e);
       }
       commitPoint = searcher.get().getIndexReader().getIndexCommit();
     } finally {

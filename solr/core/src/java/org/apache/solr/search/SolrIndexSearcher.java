@@ -461,6 +461,10 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
    */
   @Override
   public void close() throws IOException {
+    //print stack trace
+    for(StackTraceElement ste : Thread.currentThread().getStackTrace()){
+      log.info(ste.toString());
+    }
     log.info("Pilot SolrIndexSearcher is closed 461" + PilotUtil.isDryRun());
     if (log.isDebugEnabled()) {
       if (cachingEnabled) {
