@@ -85,6 +85,7 @@ import org.apache.solr.uninverting.UninvertingReader;
 import org.apache.solr.update.IndexFingerprint;
 import org.apache.solr.update.SolrIndexConfig;
 import org.pilot.PilotUtil;
+import org.pilot.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -490,8 +491,16 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
     log.info("reader.getIndexCommit() is " + cpg + " " + PilotUtil.isDryRun());
     try {
       log.info("Pilot 481 SolrIndexSearcher is dec ref'ing reader: " + PilotUtil.isDryRun());
-      if (closeReader)
-      {rawReader.decRef();}
+      if (closeReader) {
+        try {
+          log.info("rawReader type is " + rawReader.getClass().getName() + " " + PilotUtil.isDryRun());
+          State.deepCopy(rawReader);
+        } catch (Throwable e) {
+          log.error("error in deep copy", e);
+        }
+        rawReader.decRef();
+      }
+//      {rawReader.decRef();}
     } catch (Exception e) {
       SolrException.log(log, "Problem dec ref'ing reader", e);
     }
@@ -2201,6 +2210,7 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
       if (log.isDebugEnabled()) {
         log.debug("autowarming [{}] from [{}]\n\t{}", this, old, old.cacheList[i]);
       }
+      log.info("autowarming [{}] from [{}] : {}", this, old, old.cacheList[i]);
 
       final SolrQueryRequest req = new LocalSolrQueryRequest(core, params) {
         @Override

@@ -19,7 +19,9 @@ package org.apache.lucene.index;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -146,7 +148,11 @@ public abstract class IndexReader implements Closeable {
   }
 
   private void reportCloseToParentReaders() throws IOException {
-    System.out.println("report CloseToParentReaders at: " + new java.util.Date() + " (" + System.currentTimeMillis() + ")");
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    Date now = new Date();
+
+    System.out.println("report CloseToParentReaders at: " +
+        sdf.format(now) + " (" + System.currentTimeMillis() + ")");
     for(StackTraceElement ste : Thread.currentThread().getStackTrace()) {
       System.out.println("report CloseToParentReaders: "+ste);
     }

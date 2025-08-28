@@ -2446,6 +2446,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           future = searcherExecutor.submit(() -> {
             try {
               for (SolrEventListener listener : firstSearcherListeners) {
+                log.info("listern classname is {}", listener.getClass().getName());
                 listener.newSearcher(newSearcher, null);
               }
             } catch (Throwable e) {
@@ -2463,6 +2464,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
           future = searcherExecutor.submit(() -> {
             try {
               for (SolrEventListener listener : newSearcherListeners) {
+                log.info("listern2 classname is {}", listener.getClass().getName());
                 listener.newSearcher(newSearcher, currSearcher);
               }
             } catch (Throwable e) {
