@@ -2483,28 +2483,28 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       // WARNING: this code assumes a single threaded executor (that all tasks
       // queued will finish first).
       final RefCounted<SolrIndexSearcher> currSearcherHolderF = currSearcherHolder;
-      if (!alreadyRegistered) {
-        log.info("Scheduling registration of new searcher: {}", newSearcher.getName());
-        future = searcherExecutor.submit(
-            () -> {
-              try {
-                // registerSearcher will decrement onDeckSearchers and
-                // do a notify, even if it fails.
-                registerSearcher(newSearchHolder);
-              } catch (Throwable e) {
-                SolrException.log(log, e);
-                if (e instanceof Error) {
-                  throw (Error) e;
-                }
-              } finally {
-                // we are all done with the old searcher we used
-                // for warming...
-                if (currSearcherHolderF != null) currSearcherHolderF.decref();
-              }
-              return null;
-            }
-        );
-      }
+//      if (!alreadyRegistered) {
+//        log.info("Scheduling registration of new searcher: {}", newSearcher.getName());
+//        future = searcherExecutor.submit(
+//            () -> {
+//              try {
+//                // registerSearcher will decrement onDeckSearchers and
+//                // do a notify, even if it fails.
+//                registerSearcher(newSearchHolder);
+//              } catch (Throwable e) {
+//                SolrException.log(log, e);
+//                if (e instanceof Error) {
+//                  throw (Error) e;
+//                }
+//              } finally {
+//                // we are all done with the old searcher we used
+//                // for warming...
+//                if (currSearcherHolderF != null) currSearcherHolderF.decref();
+//              }
+//              return null;
+//            }
+//        );
+//      }
 
       if (waitSearcher != null) {
         waitSearcher[0] = future;

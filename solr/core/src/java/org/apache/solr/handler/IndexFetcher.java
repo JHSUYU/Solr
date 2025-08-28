@@ -992,12 +992,12 @@ public class IndexFetcher {
           SolrException.log(log, e);
         }
       }
-      try{State.deepCopy(searcher.get().getIndexReader());}
-      catch (Exception e){
-        log.info("searcher.get().getIndexReaderType is "+searcher.get().getIndexReader().getClass().getName());
-        log.info("e is "+e);
-        SolrException.log(log,e);
-      }
+//      try{State.deepCopy(searcher.get().getIndexReader());}
+//      catch (Exception e){
+//        log.info("searcher.get().getIndexReaderType is "+searcher.get().getIndexReader().getClass().getName());
+//        log.info("e is "+e);
+//        SolrException.log(log,e);
+//      }
       commitPoint = searcher.get().getIndexReader().getIndexCommit();
     } finally {
       log.info("Releasing searcher and closing core");
