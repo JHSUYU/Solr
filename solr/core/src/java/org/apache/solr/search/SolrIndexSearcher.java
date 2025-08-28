@@ -493,12 +493,12 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
       log.info("Pilot 481 SolrIndexSearcher is dec ref'ing reader: " + PilotUtil.isDryRun());
       log.info("rawReader type is " + rawReader.getClass().getName() + " " + PilotUtil.isDryRun());
       if (closeReader) {
-//        try {
-//          log.info("rawReader type is " + rawReader.getClass().getName() + " " + PilotUtil.isDryRun());
-//          State.deepCopy(rawReader);
-//        } catch (Throwable e) {
-//          log.error("error in deep copy", e);
-//        }
+        try {
+          log.info("rawReader type is " + rawReader.getClass().getName() + " " + PilotUtil.isDryRun());
+          State.deepCopy(rawReader);
+        } catch (Throwable e) {
+          log.error("error in deep copy", e);
+        }
         rawReader.decRef();
       }
 //      {rawReader.decRef();}
