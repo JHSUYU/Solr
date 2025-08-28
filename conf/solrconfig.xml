@@ -15,6 +15,7 @@
 
   <!-- 索引配置 -->
   <indexConfig>
+    <lockType>simple</lockType>
     <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
   </indexConfig>
 
