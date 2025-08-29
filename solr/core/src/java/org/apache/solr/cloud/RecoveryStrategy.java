@@ -326,7 +326,6 @@ public class RecoveryStrategy implements Runnable, Closeable {
         }
 
         log.info("Starting recovery process. recoveringAfterStartup={}", recoveringAfterStartup);
-
         final RTimer timer = new RTimer();
         try {
           doRecovery(core);
@@ -913,6 +912,7 @@ public class RecoveryStrategy implements Runnable, Closeable {
     int conflictWaitMs = zkController.getLeaderConflictResolveWait();
     // timeout after 5 seconds more than the max timeout (conflictWait + 3 seconds) on the server side
     int readTimeout = conflictWaitMs + Integer.parseInt(System.getProperty("prepRecoveryReadTimeoutExtraWait", "8000"));
+    log.info("Bug happened");
     try (HttpSolrClient client = buildRecoverySolrClient(leaderBaseUrl)) {
       client.setSoTimeout(readTimeout);
       HttpUriRequestResponse mrr = client.httpUriRequest(prepCmd);
