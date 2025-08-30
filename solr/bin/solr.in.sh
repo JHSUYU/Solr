@@ -254,3 +254,9 @@
 # Some previous versions of Solr use an outdated log4j dependency. If you are unable to use at least log4j version 2.15.0
 # then enable the following setting to address CVE-2021-44228
 # SOLR_OPTS="$SOLR_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
+
+SOLR_OPTS="$SOLR_OPTS -javaagent:/opt/Solr/solr/server/lib/ext/aspectjweaver.jar"
+
+# 设置监控服务器地址（假设监控服务器运行在172.17.0.1:44444）
+SOLR_OPTS="$SOLR_OPTS -Dpfl.monitor.endpoint=10.10.1.3"
