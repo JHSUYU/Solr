@@ -89,6 +89,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SuppressForbidden;
 import org.apache.solr.core.DirectoryFactory;
 import org.apache.solr.core.DirectoryFactory.DirContext;
+import org.apache.solr.core.HdfsDirectoryFactoryTest;
 import org.apache.solr.core.IndexDeletionPolicyWrapper;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.HttpShardHandlerFactory;
@@ -96,6 +97,7 @@ import org.apache.solr.handler.component.ShardHandlerFactory;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.store.hdfs.HdfsDirectory;
 import org.apache.solr.update.CdcrUpdateLog;
 import org.apache.solr.update.CommitUpdateCommand;
 import org.apache.solr.update.UpdateLog;
@@ -123,6 +125,7 @@ import static org.apache.solr.handler.ReplicationHandler.*;
  * @since solr 1.4
  */
 public class IndexFetcher {
+
   private static final int _100K = 100000;
 
   public static final String INDEX_PROPERTIES = "index.properties";
@@ -1120,18 +1123,28 @@ public class IndexFetcher {
     long usableSpace = usableDiskSpaceProvider.apply(tmpIndexDirPath);
     log.info("Usable space in tmpIndexDir: {} bytes", usableSpace);
     if (getApproxTotalSpaceReqd(totalSpaceRequired) > usableSpace) {
+      log.info("Not enough space available in tmpIndexDir. Need: {} bytes, Available: {} bytes",
+          getApproxTotalSpaceReqd(totalSpaceRequired), usableSpace);
       deleteFilesInAdvance(indexDir, indexDirPath, totalSpaceRequired, usableSpace);
     }
 
     for (Map<String,Object> file : filesToDownload) {
       String filename = (String) file.get(NAME);
       long size = (Long) file.get(SIZE);
-      CompareResult compareResult = compareFile(indexDir, filename, size, (Long) file.get(CHECKSUM));
+      CompareResult compareResult;
+      if(HdfsDirectory.tmp$pilot!=null){
+        Directory tmpIndexDir$pilot = solrCore.getDirectoryFactory().get(HdfsDirectory.tmp$pilot, DirContext.DEFAULT, solrCore.getSolrConfig().indexConfig.lockType);
+        compareResult = compareFile$pilot(tmpIndexDir$pilot, filename, size, (Long) file.get(CHECKSUM));
+      } else{
+        compareResult = compareFile(indexDir, filename, size, (Long) file.get(CHECKSUM));
+      }
       boolean alwaysDownload = filesToAlwaysDownloadIfNoChecksums(filename, size, compareResult);
       log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
       if (log.isDebugEnabled()) {
         log.debug("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
       }
+      log.info("compareResult for file {} : {} {} {}", filename, compareResult, downloadCompleteIndex, alwaysDownload);
+
       if (!compareResult.equal || downloadCompleteIndex || alwaysDownload) {
         log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
         File localFile = new File(indexDirPath, filename);
@@ -1149,6 +1162,9 @@ public class IndexFetcher {
           log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
           dirFileFetcher = new DirectoryFileFetcher(tmpIndexDir, file,
               (String) file.get(NAME), FILE, latestGeneration);
+          if(PilotUtil.isDryRun()){
+            HdfsDirectory.tmp$pilot = tmpIndexDirPath;
+          }
           currentFile = file;
           dirFileFetcher.fetchFile();
           bytesDownloaded += dirFileFetcher.getBytesDownloaded();
@@ -1251,6 +1267,60 @@ public class IndexFetcher {
   protected static class CompareResult {
     boolean equal = false;
     boolean checkSummed = false;
+  }
+
+  protected static CompareResult compareFile$pilot(Directory indexDir, String filename, Long backupIndexFileLen, Long backupIndexFileChecksum) {
+    CompareResult compareResult = new CompareResult();
+    try {
+      try (final IndexInput indexInput = indexDir.openInput(filename, IOContext.READONCE)) {
+        long indexFileLen = indexInput.length();
+        long indexFileChecksum = 0;
+
+        if (backupIndexFileChecksum != null) {
+          try {
+            indexFileChecksum = CodecUtil.retrieveChecksum(indexInput);
+            compareResult.checkSummed = true;
+          } catch (Exception e) {
+            log.warn("Could not retrieve checksum from file.", e);
+          }
+        }
+
+        if (!compareResult.checkSummed) {
+          // we don't have checksums to compare
+
+          if (indexFileLen == backupIndexFileLen) {
+            compareResult.equal = true;
+            return compareResult;
+          } else {
+            log.info(
+                "File {} did not match. expected length is {} and actual length is {}", filename, backupIndexFileLen, indexFileLen);
+            compareResult.equal = false;
+            return compareResult;
+          }
+        }
+
+        // we have checksums to compare
+
+        if (indexFileLen == backupIndexFileLen && indexFileChecksum == backupIndexFileChecksum) {
+          compareResult.equal = true;
+          return compareResult;
+        } else {
+          log.warn("File {} did not match. expected checksum is {} and actual is checksum {}. " +
+                  "expected length is {} and actual length is {}"
+              , filename, backupIndexFileChecksum, indexFileChecksum,
+              backupIndexFileLen, indexFileLen);
+          compareResult.equal = false;
+          return compareResult;
+        }
+      }
+    } catch (NoSuchFileException | FileNotFoundException e) {
+      compareResult.equal = false;
+      return compareResult;
+    } catch (IOException e) {
+      log.error("Could not read file {}. Downloading it again", filename, e);
+      compareResult.equal = false;
+      return compareResult;
+    }
   }
 
   protected static CompareResult compareFile(Directory indexDir, String filename, Long backupIndexFileLen, Long backupIndexFileChecksum) {

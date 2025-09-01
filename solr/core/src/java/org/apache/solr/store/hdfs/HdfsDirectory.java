@@ -58,6 +58,8 @@ public class HdfsDirectory extends BaseDirectory {
   private final FileSystem fileSystem;
   private final FileContext fileContext;
 
+  public static String tmp$pilot;
+
   private final int bufferSize;
 
   /** Used to generate temp file names in {@link #createTempOutput}. */
