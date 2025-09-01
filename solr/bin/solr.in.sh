@@ -256,7 +256,7 @@
 # SOLR_OPTS="$SOLR_OPTS -Dlog4j2.formatMsgNoLookups=true"
 
 
-SOLR_OPTS="$SOLR_OPTS -javaagent:/opt/Solr/solr/server/lib/ext/aspectjweaver.jar"
-
-# 设置监控服务器地址（假设监控服务器运行在172.17.0.1:44444）
-SOLR_OPTS="$SOLR_OPTS -Dpfl.monitor.endpoint=10.10.1.3"
+#SOLR_OPTS="$SOLR_OPTS -javaagent:/opt/Solr/solr/server/lib/ext/aspectjweaver.jar"
+#
+## 设置监控服务器地址（假设监控服务器运行在172.17.0.1:44444）
+#SOLR_OPTS="$SOLR_OPTS -Dpfl.monitor.endpoint=10.10.1.3"
