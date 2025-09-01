@@ -2483,7 +2483,7 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
       // WARNING: this code assumes a single threaded executor (that all tasks
       // queued will finish first).
       final RefCounted<SolrIndexSearcher> currSearcherHolderF = currSearcherHolder;
-      if (!alreadyRegistered && !PilotUtil.isDryRun()) {
+      if (!alreadyRegistered) {
         log.info("Scheduling registration of new searcher: {}", newSearcher.getName());
         future = searcherExecutor.submit(
             () -> {
@@ -2499,7 +2499,10 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
               } finally {
                 // we are all done with the old searcher we used
                 // for warming...
-                if (currSearcherHolderF != null) currSearcherHolderF.decref();
+                log.info("Decreffing current searcher after new searcher registered: {}", currSearcherHolderF == null ? null : currSearcherHolderF.get().getName());
+                if (currSearcherHolderF != null && !PilotUtil.isDryRun()) {
+                  currSearcherHolderF.decref();
+                }
               }
               return null;
             }
