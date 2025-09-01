@@ -637,6 +637,7 @@ public class IndexFetcher {
 
           long bytesDownloaded = downloadIndexFiles(isFullCopyNeeded, indexDir,
               tmpIndexDir, indexDirPath, tmpIndexDirPath, latestGeneration);
+          log.info("Total bytes downloaded: {}", bytesDownloaded);
           if (tlogFilesToDownload != null) {
             bytesDownloaded += downloadTlogFiles(tmpTlogDir, latestGeneration);
             reloadCore = true; // reload update log
