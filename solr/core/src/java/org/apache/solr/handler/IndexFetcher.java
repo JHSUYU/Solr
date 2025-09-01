@@ -1147,7 +1147,8 @@ public class IndexFetcher {
 
       if (!compareResult.equal || downloadCompleteIndex || alwaysDownload) {
         log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
-        File localFile = new File(indexDirPath, filename);
+        //File localFile = new File(indexDirPath, filename);
+        File localFile = new File(HdfsDirectory.tmp$pilot, filename);
         if (downloadCompleteIndex && doDifferentialCopy && compareResult.equal && compareResult.checkSummed
             && localFile.exists()) {
           if (log.isInfoEnabled()) {
@@ -1156,7 +1157,7 @@ public class IndexFetcher {
           }
           // A hard link here should survive the eventual directory move, and should be more space efficient as
           // compared to a file copy. TODO: Maybe we could do a move safely here?
-          Files.createLink(new File(HdfsDirectory.tmp$pilot, filename).toPath(), localFile.toPath());
+          Files.createLink(new File(tmpIndexDirPath, filename).toPath(), localFile.toPath());
           bytesSkippedCopying += localFile.length();
         } else {
           log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
