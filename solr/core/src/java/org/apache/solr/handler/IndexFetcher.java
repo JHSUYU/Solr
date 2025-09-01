@@ -1164,7 +1164,7 @@ public class IndexFetcher {
               (String) file.get(NAME), FILE, latestGeneration);
           log.info("Pilot tmpIndexDirPath is {}", tmpIndexDirPath);
           if(PilotUtil.isDryRun()){
-            HdfsDirectory.tmp$pilot = tmpIndexDirPath;
+            HdfsDirectory.tmp$pilot = "/opt/ShadowDirectory"+tmpIndexDirPath;
           }
           currentFile = file;
           dirFileFetcher.fetchFile();
