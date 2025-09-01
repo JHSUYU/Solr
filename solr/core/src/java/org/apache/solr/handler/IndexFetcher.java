@@ -89,7 +89,6 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SuppressForbidden;
 import org.apache.solr.core.DirectoryFactory;
 import org.apache.solr.core.DirectoryFactory.DirContext;
-import org.apache.solr.core.HdfsDirectoryFactoryTest;
 import org.apache.solr.core.IndexDeletionPolicyWrapper;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.HttpShardHandlerFactory;
@@ -1133,6 +1132,7 @@ public class IndexFetcher {
       long size = (Long) file.get(SIZE);
       CompareResult compareResult;
       if(HdfsDirectory.tmp$pilot!=null){
+        log.info("Comparing file {} in HDFS tmp dir {}", filename, HdfsDirectory.tmp$pilot);
         Directory tmpIndexDir$pilot = solrCore.getDirectoryFactory().get(HdfsDirectory.tmp$pilot, DirContext.DEFAULT, solrCore.getSolrConfig().indexConfig.lockType);
         compareResult = compareFile$pilot(tmpIndexDir$pilot, filename, size, (Long) file.get(CHECKSUM));
       } else{
@@ -1156,12 +1156,13 @@ public class IndexFetcher {
           }
           // A hard link here should survive the eventual directory move, and should be more space efficient as
           // compared to a file copy. TODO: Maybe we could do a move safely here?
-          Files.createLink(new File(tmpIndexDirPath, filename).toPath(), localFile.toPath());
+          Files.createLink(new File(HdfsDirectory.tmp$pilot, filename).toPath(), localFile.toPath());
           bytesSkippedCopying += localFile.length();
         } else {
           log.info("Downloading file={} size={} checksum={} alwaysDownload={}", filename, size, file.get(CHECKSUM), alwaysDownload);
           dirFileFetcher = new DirectoryFileFetcher(tmpIndexDir, file,
               (String) file.get(NAME), FILE, latestGeneration);
+          log.info("Pilot tmpIndexDirPath is {}", tmpIndexDirPath);
           if(PilotUtil.isDryRun()){
             HdfsDirectory.tmp$pilot = tmpIndexDirPath;
           }
