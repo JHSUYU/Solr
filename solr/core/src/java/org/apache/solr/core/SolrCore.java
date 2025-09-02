@@ -2500,7 +2500,8 @@ public final class SolrCore implements SolrInfoBean, SolrMetricProducer, Closeab
                 // we are all done with the old searcher we used
                 // for warming...
                 log.info("Decreffing current searcher after new searcher registered: {}", currSearcherHolderF == null ? null : currSearcherHolderF.get().getName());
-                if (currSearcherHolderF != null && !PilotUtil.isDryRun()) {
+                if (currSearcherHolderF != null) {
+                  log.info("currSearcherHolderF release classname is "+currSearcherHolderF.get().getClass().getName());
                   currSearcherHolderF.decref();
                 }
               }
