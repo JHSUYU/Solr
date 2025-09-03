@@ -47,7 +47,7 @@ import java.util.concurrent.locks.Lock;
 public abstract class SolrCoreState {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  public boolean triggerdByManualRecovery = false;
+  public boolean triggerdByManualRecovery = true;
 
   public static boolean isPilot = false;
 

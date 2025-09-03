@@ -158,6 +158,7 @@ public abstract class IndexReader implements Closeable {
     }
     synchronized (parentReaders) {
       for (IndexReader parent : parentReaders) {
+        System.out.println("report CloseToParentReaders to parent: " + parent.getClass().getName() + "@" + Integer.toHexString(parent.hashCode()));
         parent.closedByChild = true;
         // cross memory barrier by a fake write:
         parent.refCount.addAndGet(0);
