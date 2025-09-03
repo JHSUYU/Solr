@@ -2180,9 +2180,9 @@ function start_solr() {
   SOLR_JETTY_ADDL_CONFIG="$3"
 
   # define default GC_TUNE
+  #         '-XX:+PerfDisableSharedMem' \
   if [ -z ${GC_TUNE+x} ]; then
       GC_TUNE=('-XX:+UseG1GC' \
-        '-XX:+PerfDisableSharedMem' \
         '-XX:+ParallelRefProcEnabled' \
         '-XX:MaxGCPauseMillis=250' \
         '-XX:+UseLargePages' \
