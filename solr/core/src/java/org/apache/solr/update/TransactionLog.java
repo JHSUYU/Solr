@@ -479,9 +479,9 @@ public class TransactionLog implements Closeable {
 
 
   public long writeCommit(CommitUpdateCommand cmd) {
-    if(PilotUtil.isDryRun()){
-      return -1;
-    }
+//    if(PilotUtil.isDryRun()){
+//      return -1;
+//    }
     LogCodec codec = new LogCodec(resolver);
     synchronized (this) {
       try {
