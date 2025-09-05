@@ -1654,9 +1654,13 @@ public class ZkController implements Closeable {
       }
       try (SolrCore core = cc.getCore(cd.getName())) {
         if (core != null && state == Replica.State.ACTIVE) {
+          log.info("1657Registering searcher for core {} in collection {} shard {}",
+              cd.getName(), collection, shardId);
           ensureRegisteredSearcher(core);
         }
         if (core != null && core.getDirectoryFactory().isSharedStorage()) {
+          log.info("1662Core {} uses shared storage, publishing dataDir and ulogDir in zk",
+              cd.getName());
           if (core.getDirectoryFactory().isSharedStorage()) {
             props.put(ZkStateReader.SHARED_STORAGE_PROP, "true");
             props.put("dataDir", core.getDataDir());
@@ -1690,11 +1694,15 @@ public class ZkController implements Closeable {
       }
       DocCollection coll = zkStateReader.getCollection(collection);
       if (forcePublish || updateStateDotJson(coll, coreNodeName)) {
+          log.info("Publishing state {} for collection {} shard {} replica {}",
+              state, collection, shardId, coreNodeName);
           overseerJobQueue.offer(Utils.toJSON(m));
       }
       // extra handling for PRS, we need to write the PRS entries from this node directly,
       // as overseer does not and should not handle those entries
       if (coll != null && coll.isPerReplicaState() && coreNodeName != null) {
+        log.info("Also updating per-replica state for replica {} to {}",
+            coreNodeName, state);
         PerReplicaStates perReplicaStates =
             PerReplicaStates.fetch(coll.getZNode(), zkClient, coll.getPerReplicaStates());
         PerReplicaStatesOps.flipState(coreNodeName, state, perReplicaStates)
