@@ -33,6 +33,9 @@ import org.apache.solr.common.cloud.Replica;
 import org.apache.solr.common.cloud.RoutingRule;
 import org.apache.solr.common.cloud.Slice;
 import org.apache.solr.common.util.TimeSource;
+import org.apache.solr.core.SolrCore;
+import org.apache.solr.update.UpdateLog;
+import org.apache.solr.util.TestInjection;
 import org.apache.solr.util.TimeOut;
 import org.apache.zookeeper.KeeperException;
 import org.junit.BeforeClass;
@@ -98,6 +101,50 @@ public class MigrateRouteKeyTest extends SolrCloudTestCase {
                   .process(cluster.getSolrClient());
             });
     assertTrue(remoteSolrException.getMessage().contains("split.key cannot be null or empty"));
+  }
+
+  @Test
+  public void testFailedMigrateRestoresTargetUpdateLog() throws Exception {
+    String sourceCollection = "failedMigrate-source";
+    CollectionAdminRequest.createCollection(sourceCollection, "conf", 1, 1)
+        .process(cluster.getSolrClient());
+    String targetCollection = "failedMigrate-target";
+    CollectionAdminRequest.createCollection(targetCollection, "conf", 1, 1)
+        .process(cluster.getSolrClient());
+
+    cluster.getSolrClient().add(sourceCollection, new SolrInputDocument("id", "a!1"));
+    cluster.getSolrClient().commit(sourceCollection);
+
+    TestInjection.migrateFailureAfterBuffering = "true:100";
+    RemoteSolrException injectedFailure;
+    try {
+      injectedFailure =
+          expectThrows(
+              RemoteSolrException.class,
+              () ->
+                  CollectionAdminRequest.migrateData(sourceCollection, targetCollection, "a!")
+                      .setForwardTimeout(45)
+                      .process(cluster.getSolrClient()));
+    } finally {
+      TestInjection.reset();
+    }
+    assertTrue(
+        injectedFailure.getMessage(),
+        injectedFailure.getMessage().contains("after target starts buffering updates"));
+
+    Replica targetLeader = getCollectionState(targetCollection).getSlice("shard1").getLeader();
+    try (SolrCore targetCore =
+        cluster
+            .getReplicaJetty(targetLeader)
+            .getCoreContainer()
+            .getCore(targetLeader.getCoreName())) {
+      assertNotNull(targetCore);
+      assertEquals(UpdateLog.State.ACTIVE, targetCore.getUpdateHandler().getUpdateLog().getState());
+    }
+
+    invokeCollectionMigration(
+        CollectionAdminRequest.migrateData(sourceCollection, targetCollection, "a!")
+            .setForwardTimeout(45));
   }
 
   @Test

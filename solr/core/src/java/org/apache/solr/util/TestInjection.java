@@ -137,6 +137,8 @@ public class TestInjection {
 
   public static volatile String splitFailureAfterReplicaCreation = null;
 
+  public static volatile String migrateFailureAfterBuffering = null;
+
   public static volatile CountDownLatch splitLatch = null;
 
   public static volatile CountDownLatch directUpdateLatch = null;
@@ -210,6 +212,7 @@ public class TestInjection {
     randomDelayInCoreCreation = null;
     splitFailureBeforeReplicaCreation = null;
     splitFailureAfterReplicaCreation = null;
+    migrateFailureAfterBuffering = null;
     splitLatch = null;
     directUpdateLatch = null;
     reindexLatch = null;
@@ -504,7 +507,7 @@ public class TestInjection {
     return true;
   }
 
-  private static boolean injectSplitFailure(String probability, String label) {
+  private static boolean injectFailure(String probability, String label) {
     if (probability != null) {
       Random rand = random();
       if (null == rand) return true;
@@ -521,13 +524,16 @@ public class TestInjection {
   }
 
   public static boolean injectSplitFailureBeforeReplicaCreation() {
-    return injectSplitFailure(
+    return injectFailure(
         splitFailureBeforeReplicaCreation, "before creating replica for sub-shard");
   }
 
   public static boolean injectSplitFailureAfterReplicaCreation() {
-    return injectSplitFailure(
-        splitFailureAfterReplicaCreation, "after creating replica for sub-shard");
+    return injectFailure(splitFailureAfterReplicaCreation, "after creating replica for sub-shard");
+  }
+
+  public static boolean injectMigrateFailureAfterBuffering() {
+    return injectFailure(migrateFailureAfterBuffering, "after target starts buffering updates");
   }
 
   public static boolean injectSplitLatch() {

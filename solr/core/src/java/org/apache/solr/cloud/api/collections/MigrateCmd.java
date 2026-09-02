@@ -51,6 +51,7 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Utils;
 import org.apache.solr.handler.component.ShardHandler;
+import org.apache.solr.util.TestInjection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,16 +144,20 @@ public class MigrateCmd implements CollApiCmds.CollectionApiCommand {
             sourceSlice,
             targetSlice,
             splitKey);
-        migrateKey(
-            adminCmdContext,
-            sourceCollection,
-            sourceSlice,
-            targetCollection,
-            targetSlice,
-            splitKey,
-            timeout,
-            results,
-            message);
+        try (TargetUpdateBufferGuard targetUpdateBufferGuard =
+            new TargetUpdateBufferGuard(adminCmdContext, results)) {
+          migrateKey(
+              adminCmdContext,
+              sourceCollection,
+              sourceSlice,
+              targetCollection,
+              targetSlice,
+              splitKey,
+              timeout,
+              results,
+              message,
+              targetUpdateBufferGuard);
+        }
       }
     }
   }
@@ -166,7 +171,8 @@ public class MigrateCmd implements CollApiCmds.CollectionApiCommand {
       String splitKey,
       int timeout,
       NamedList<Object> results,
-      ZkNodeProps message)
+      ZkNodeProps message,
+      TargetUpdateBufferGuard targetUpdateBufferGuard)
       throws Exception {
     String tempSourceCollectionName =
         "split_" + sourceSlice.getName() + "_temp_" + targetSlice.getName();
@@ -237,6 +243,8 @@ public class MigrateCmd implements CollApiCmds.CollectionApiCommand {
       shardRequestTracker.processResponses(
           results, shardHandler, true, "MIGRATE failed to request node to buffer updates");
     }
+    targetUpdateBufferGuard.markBuffering(targetLeader);
+    assert TestInjection.injectMigrateFailureAfterBuffering();
     ZkNodeProps m =
         new ZkNodeProps(
             Overseer.QUEUE_OPERATION,
@@ -476,19 +484,8 @@ public class MigrateCmd implements CollApiCmds.CollectionApiCommand {
               + targetLeader.getNodeName();
       shardRequestTracker.processResponses(results, shardHandler, true, msg);
     }
-    log.info("Asking target leader to apply buffered updates");
-    params = new ModifiableSolrParams();
-    params.set(
-        CoreAdminParams.ACTION, CoreAdminParams.CoreAdminAction.REQUESTAPPLYUPDATES.toString());
-    params.set(CoreAdminParams.NAME, targetLeader.getStr("core"));
-
-    {
-      final ShardRequestTracker shardRequestTracker =
-          CollectionHandlingUtils.asyncRequestTracker(adminCmdContext, ccc);
-      shardRequestTracker.sendShardRequest(targetLeader, params, shardHandler);
-      shardRequestTracker.processResponses(
-          results, shardHandler, true, "MIGRATE failed to request node to apply buffered updates");
-    }
+    requestApplyBufferedUpdates(adminCmdContext, results, targetLeader, shardHandler);
+    targetUpdateBufferGuard.markApplied();
     try {
       log.info("Deleting temporary collection: {}", tempSourceCollectionName);
       new DeleteCollectionCmd(ccc)
@@ -503,6 +500,51 @@ public class MigrateCmd implements CollApiCmds.CollectionApiCommand {
           "Unable to delete temporary collection: {}. Please remove it manually",
           tempSourceCollectionName,
           e);
+    }
+  }
+
+  private void requestApplyBufferedUpdates(
+      AdminCmdContext adminCmdContext,
+      NamedList<Object> results,
+      Replica targetLeader,
+      ShardHandler shardHandler) {
+    log.info("Asking target leader to apply buffered updates");
+    ModifiableSolrParams params = new ModifiableSolrParams();
+    params.set(
+        CoreAdminParams.ACTION, CoreAdminParams.CoreAdminAction.REQUESTAPPLYUPDATES.toString());
+    params.set(CoreAdminParams.NAME, targetLeader.getStr("core"));
+
+    final ShardRequestTracker shardRequestTracker =
+        CollectionHandlingUtils.asyncRequestTracker(adminCmdContext, ccc);
+    shardRequestTracker.sendShardRequest(targetLeader, params, shardHandler);
+    shardRequestTracker.processResponses(
+        results, shardHandler, true, "MIGRATE failed to request node to apply buffered updates");
+  }
+
+  /** Restores target update processing if migration fails after buffering was confirmed. */
+  private class TargetUpdateBufferGuard implements AutoCloseable {
+    private final AdminCmdContext adminCmdContext;
+    private final NamedList<Object> results;
+    private Replica targetLeader;
+
+    private TargetUpdateBufferGuard(AdminCmdContext adminCmdContext, NamedList<Object> results) {
+      this.adminCmdContext = adminCmdContext;
+      this.results = results;
+    }
+
+    private void markBuffering(Replica targetLeader) {
+      this.targetLeader = targetLeader;
+    }
+
+    private void markApplied() {
+      targetLeader = null;
+    }
+
+    @Override
+    public void close() {
+      if (targetLeader != null) {
+        requestApplyBufferedUpdates(adminCmdContext, results, targetLeader, ccc.newShardHandler());
+      }
     }
   }
 
